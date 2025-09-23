@@ -9,10 +9,12 @@ export class Renderer implements Plugin {
     __swapChain!: SwapChain;
     __device!: Device;
 
+    // modifies the hooks of therender context passed in directly
     apply(context: PluginContext) {
         const { hooks, canvas, renderer, shaderCompilerPath, devicePixelRatio } =
         context;
 
+        // swap chain creation is async
         hooks.initAsync.tapPromise(async () => {
             let deviceContribution: DeviceContribution;
             if (renderer === 'webgl') {

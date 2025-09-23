@@ -11,9 +11,9 @@ export class AsyncParallelHook<T> {
 
     promise(...args: T[]): Promise<void[]> {
         return Promise.all(
-        this.__callbacks.map((callback) => {
-            return callback(...args);
-        }),
+            this.__callbacks.map((callback) => {
+                return callback(...args);
+            }),
         );
     }
 }

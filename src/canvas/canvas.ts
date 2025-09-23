@@ -12,7 +12,6 @@ export interface CanvasConfig {
 
 export class Canvas {
     __instancePromise: Promise<this>;
-
     __pluginContext!: PluginContext;
 
     constructor(config: CanvasConfig) {
@@ -23,13 +22,16 @@ export class Canvas {
             devicePixelRatio,
         } = config;
 
+        // get global this object
         const globalThis = getGlobalThis();
+
         this.__pluginContext = {
           globalThis,
           canvas,
           renderer,
           shaderCompilerPath,
           devicePixelRatio: devicePixelRatio ?? globalThis.devicePixelRatio,
+          // at this point, no hooks are registered.
           hooks: {
             init: new SyncHook<[]>(),
             initAsync: new AsyncParallelHook<[]>(),
@@ -42,15 +44,19 @@ export class Canvas {
     
         this.__instancePromise = (async () => {
             const { hooks } = this.__pluginContext;
+            // register the hooks to the new renderer plug in we have created here
             [new Renderer()].forEach((plugin) => {
                 plugin.apply(this.__pluginContext);
             });
+
+            // ensure that the init callbacks are called
             hooks.init.call();
             await hooks.initAsync.promise();
             return this;
         })();
     }
 
+    // must be called to ensure that the async instancePromise is fulfilled and returns the instance itself
     get initialized() {
         return this.__instancePromise.then(() => this);
     }

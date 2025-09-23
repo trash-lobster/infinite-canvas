@@ -2,29 +2,17 @@ import { CanvasConfig } from '../canvas';
 import { AsyncParallelHook, SyncHook } from '../utils';
 
 export interface Hooks {
-    /**
-     * Called at the initialization stage.
-     */
+    /** Called at the initialization stage.*/
     init: SyncHook<[]>;
-    /**
-     * Called at the initialization stage.
-     */
+    /** Called at the initialization stage, but for async hooks.*/
     initAsync: AsyncParallelHook<[]>;
-    /**
-     * Called at the beginning of each frame.
-     */
+    /** Called at the beginning of each frame.*/
     beginFrame: SyncHook<[]>;
-    /**
-     * Called at the end of each frame.
-     */
+    /** Called at the end of each frame.*/
     endFrame: SyncHook<[]>;
-    /**
-     * Called at the destruction stage.
-     */
+    /** Called at the destruction stage.*/
     destroy: SyncHook<[]>;
-    /**
-     * Called when the canvas is resized.
-     */
+    /** Called when the canvas is resized.*/
     resize: SyncHook<[number, number]>;
 }
 
@@ -47,8 +35,6 @@ export type PluginContext = {
 } & CanvasConfig;
 
 export interface Plugin {
-    /**
-     * Get called when the plugin is installed.
-     */
+    /** Get called when the plugin is installed.*/
     apply: (context: PluginContext) => void;
 }
