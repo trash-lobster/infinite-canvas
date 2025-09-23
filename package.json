@@ -5,12 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run test",
-    "build": "npx tsc --build",
-    "sortGlossary": "node ./journal/sort.js -f journal/a-glossary.md"
+    "sortGlossary": "node ./journal/sort.js -f journal/a-glossary.md",
+    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=iife --global-name=InfiniteCanvas"
   },
   "author": "Vincent Sit",
   "license": "ISC",
   "devDependencies": {
+    "esbuild": "^0.25.10",
     "typescript": "^5.9.2"
   },
   "dependencies": {
