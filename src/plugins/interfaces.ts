@@ -1,3 +1,4 @@
+import { Shape } from 'shapes';
 import { CanvasConfig } from '../canvas';
 import { AsyncParallelHook, SyncHook } from '../utils';
 
@@ -10,6 +11,8 @@ export interface Hooks {
     beginFrame: SyncHook<[]>;
     /** Called at the end of each frame.*/
     endFrame: SyncHook<[]>;
+    /** Renders all the shape */
+    render: SyncHook<[Shape]>;
     /** Called at the destruction stage.*/
     destroy: SyncHook<[]>;
     /** Called when the canvas is resized.*/

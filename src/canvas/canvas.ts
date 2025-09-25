@@ -1,3 +1,4 @@
+import { Shape } from "shapes";
 import { Renderer } from "../plugins";
 import { PluginContext } from "../plugins/interfaces";
 import { AsyncParallelHook, SyncHook } from "../utils";
@@ -13,6 +14,7 @@ export interface CanvasConfig {
 export class Canvas {
     __instancePromise: Promise<this>;
     __pluginContext!: PluginContext;
+    __shapes: Shape[] = [];
 
     constructor(config: CanvasConfig) {
         const {
@@ -38,6 +40,7 @@ export class Canvas {
             beginFrame: new SyncHook<[]>(),
             endFrame: new SyncHook<[]>(),
             destroy: new SyncHook<[]>(),
+            render: new SyncHook<[Shape]>(),
             resize: new SyncHook<[number, number]>(),
           },
         };
@@ -64,6 +67,9 @@ export class Canvas {
     render() {
         const { hooks } = this.__pluginContext;
         hooks.beginFrame.call();
+        this.__shapes.forEach((shape) => {
+            hooks.render.call(shape);
+        });
         hooks.endFrame.call();
     }
 
@@ -72,16 +78,25 @@ export class Canvas {
         hooks.resize.call(width, height);
     }
 
-    /**
-     * Destroy the canvas.
-     */
     destroy() {
         const { hooks } = this.__pluginContext;
+        this.__shapes.forEach((shape) => shape.destroy());
         hooks.destroy.call();
     }
 
     getDOM() {
         return this.__pluginContext.canvas;
+    }
+
+    appendChild(shape: Shape) {
+        this.__shapes.push(shape);
+    }
+
+    removeChild(shape: Shape) {
+        const index = this.__shapes.indexOf(shape);
+        if (index !== -1) {
+            this.__shapes.splice(index, 1);
+        }
     }
 
 }

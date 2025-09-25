@@ -1,6 +1,6 @@
 # Initialise canvas
 
-_See https://infinitecanvas.cc/guide/lesson-001#swapchain for more detail_
+_See https://infinitecanvas.cc/guide/lesson-001 for more detail_
 
 On the web, if you want to render anything on the canvas, you have to decide on the rendering context, which is the interface that allows you to use a selected underlying graphics system.
 
