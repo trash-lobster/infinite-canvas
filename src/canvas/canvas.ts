@@ -1,7 +1,7 @@
 import { Shape } from "shapes";
 import { Renderer } from "../plugins";
 import { PluginContext } from "../plugins/interfaces";
-import { AsyncParallelHook, SyncHook } from "../utils";
+import { AsyncParallelHook, SyncHook, traverse } from "../utils";
 import { getGlobalThis } from "../utils/browser";
 
 export interface CanvasConfig {
@@ -68,7 +68,10 @@ export class Canvas {
         const { hooks } = this.__pluginContext;
         hooks.beginFrame.call();
         this.__shapes.forEach((shape) => {
-            hooks.render.call(shape);
+            // this is because the shape needs to recursively call its children to make sure that they are rendered as well
+            traverse(shape, (s) => {
+                hooks.render.call(s);
+            })
         });
         hooks.endFrame.call();
     }
@@ -80,7 +83,11 @@ export class Canvas {
 
     destroy() {
         const { hooks } = this.__pluginContext;
-        this.__shapes.forEach((shape) => shape.destroy());
+        this.__shapes.forEach((shape) => 
+            traverse(shape, (s) => {
+                s.destroy();
+            })
+        );
         hooks.destroy.call();
     }
 

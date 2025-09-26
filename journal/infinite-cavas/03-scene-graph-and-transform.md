@@ -55,6 +55,83 @@ The GPU expects to receive a vector4. The 3 x 3 matrix obviously does not meet t
 
 Each row has to be 16-byte aligned. `float32` is 4 bytes so four of them is 16 bytes.
 
+## Understanding the buffers
+- Uniform buffer: Contains the transformation matrix for the particular circle. Its usage is `BufferUsage.UNIFORM`, which indicates that it is accessible to both vertex and fragment shaders.
+- Instanced buffer: Stores specific properties unique to the instance. Fed into the `vertex` shader. This allows multiple copies of the same geometry (e.g. the circle shape) to be created with different properties.
+- Fragment unit buffer: defines the unit quad that covers the circle. A unit quad is the entire normalized device coordinate space, starting from (-1, -1) to (1, 1). This quad is common to all shapes that you will draw on the canvas.
+- Index buffer: defines the triangle topology and tells the GPU how to connect the vertices to form the triangles.
+    ```
+        Vertices:        Triangle 1:      Triangle 2:       // the winding order is counter-clockwise
+        D(3) ---- C(2)   D(3) ---- C(2)   D(3) ---- C(2)
+        |         |      |         |       |     /  |
+        |         |      |         |       |    /   |
+        |         |      |         |       |   /    |
+        A(0) ---- B(1)   A(0) ---- B(1)   A(0) ---- B(1)
+
+                        Indices: 0,1,2    Indices: 0,2,3
+                        (A,B,C)           (A,C,D)
+    ```
+
+```js
+this.__inputLayout = device.createInputLayout({
+    vertexBufferDescriptors: [
+    {
+        arrayStride: 4 * 2,
+        stepMode: VertexStepMode.VERTEX,    // this is the quad unit coordinates
+        attributes: [
+            {
+                shaderLocation: 0,
+                offset: 0,
+                format: Format.F32_RG,
+            },
+        ],
+    },
+    {
+        arrayStride: 4 * 8,
+        stepMode: VertexStepMode.INSTANCE,
+        attributes: [
+            {
+                shaderLocation: 1,
+                offset: 0,
+                format: Format.F32_RG,      // grabs the first 2 sets of 4 bytes
+            },
+            {
+                shaderLocation: 2,
+                offset: 4 * 2,
+                format: Format.F32_RG,      // grabs the next 2 after the offset
+            },
+            {
+                shaderLocation: 3,
+                offset: 4 * 4,
+                format: Format.F32_RGBA,    // grabs the last 4 sets of 4 bytes
+            },
+        ],
+    },
+    // ...
+]});
+```
+
+## GPU process flow
+1. Vertex Shader receives:
+   - Quad vertex positions (from fragUnitBuffer)
+   - Circle properties (from instancedBuffer) - updated if the dirty flag is on
+   - Transform matrix (from uniformBuffer) - this is processed every frame
+
+2. Vertex Shader outputs:
+   - Transformed quad vertices
+   - Interpolated circle data for fragments
+
+3. Rasterization (GPU Hardware):
+   - Converts triangles to pixels
+   - Interpolates vertex attributes across pixels
+   - Generates fragments for each covered pixel
+
+4. Fragment Shader receives:
+   - Interpolated position within circle
+   - Circle center, radius, color
+   - Uses SDF to determine if pixel is inside circle and output the pixel's color
+
+5. Result: Perfect circular shape rendered efficiently
 
 ## Update transform
 The transformation matrix of a child node can be calculated by:

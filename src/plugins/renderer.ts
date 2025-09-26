@@ -9,6 +9,7 @@ WebGPUDeviceContribution,
 } from '@antv/g-device-api';
 import type { SwapChain, DeviceContribution, Device, Buffer, RenderPass, RenderTarget } from '@antv/g-device-api';
 import type { Plugin, PluginContext } from './interfaces';
+import { IDENTITY_TRANSFORM } from 'shapes';
 
 export class Renderer implements Plugin {
     __swapChain!: SwapChain;

@@ -68,8 +68,8 @@ export class Circle extends Shape {
 
     set cx(cx: number) {
         if (this.__cx !== cx) {
-        this.__cx = cx;
-        this.renderDirtyFlag = true;
+            this.__cx = cx;
+            this.renderDirtyFlag = true;
         }
     }
 
@@ -79,8 +79,8 @@ export class Circle extends Shape {
 
     set cy(cy: number) {
         if (this.__cy !== cy) {
-        this.__cy = cy;
-        this.renderDirtyFlag = true;
+            this.__cy = cy;
+            this.renderDirtyFlag = true;
         }
     }
 
@@ -90,8 +90,8 @@ export class Circle extends Shape {
 
     set r(r: number) {
         if (this.__r !== r) {
-        this.__r = r;
-        this.renderDirtyFlag = true;
+            this.__r = r;
+            this.renderDirtyFlag = true;
         }
     }
 
@@ -109,109 +109,112 @@ export class Circle extends Shape {
 
     render(device: Device, renderPass: RenderPass, uniformBuffer: Buffer) {
         if (!this.__program) {
-        this.__uniformBuffer = device.createBuffer({
-            viewOrSize: new Float32Array([this.__antiAliasingType]),
-            usage: BufferUsage.UNIFORM,
-            hint: BufferFrequencyHint.DYNAMIC,
-        });
-        this.__program = device.createProgram({
-            vertex: {
-            glsl: vert,
-            },
-            fragment: {
-            glsl: frag,
-            },
-        });
+            this.__program = device.createProgram({
+                vertex: {
+                    glsl: vert,
+                },
+                fragment: {
+                    glsl: frag,
+                },
+            });
 
-        this.__instancedBuffer = device.createBuffer({
-            viewOrSize: Float32Array.BYTES_PER_ELEMENT * 8,
-            usage: BufferUsage.VERTEX,
-            hint: BufferFrequencyHint.DYNAMIC,
-        });
-        this.__fragUnitBuffer = device.createBuffer({
-            viewOrSize: new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]),
-            usage: BufferUsage.VERTEX,
-            hint: BufferFrequencyHint.STATIC,
-        });
-        this.__indexBuffer = device.createBuffer({
-            viewOrSize: new Uint32Array([0, 1, 2, 0, 2, 3]),
-            usage: BufferUsage.INDEX,
-            hint: BufferFrequencyHint.STATIC,
-        });
+            this.__uniformBuffer = device.createBuffer({
+                viewOrSize: Float32Array.BYTES_PER_ELEMENT * 12, // mat4
+                usage: BufferUsage.UNIFORM,
+                hint: BufferFrequencyHint.DYNAMIC,
+            });
 
-        this.__inputLayout = device.createInputLayout({
-            vertexBufferDescriptors: [
-            {
-                arrayStride: 4 * 2,
-                stepMode: VertexStepMode.VERTEX,
-                attributes: [
+            // allow you to draw multiple copies of the same geometry with different properties
+            this.__instancedBuffer = device.createBuffer({
+                viewOrSize: Float32Array.BYTES_PER_ELEMENT * 8,
+                usage: BufferUsage.VERTEX,
+                hint: BufferFrequencyHint.DYNAMIC,
+            });
+
+            // defines a unit quad to rasterize fragments on
+            this.__fragUnitBuffer = device.createBuffer({
+                viewOrSize: new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]),
+                usage: BufferUsage.VERTEX,
+                hint: BufferFrequencyHint.STATIC,
+            });
+
+            // tells the GPU how to split the four vertices into two triangles
+            this.__indexBuffer = device.createBuffer({
+                viewOrSize: new Uint32Array([0, 1, 2, 0, 2, 3]),
+                usage: BufferUsage.INDEX,
+                hint: BufferFrequencyHint.STATIC,
+            });
+
+            // dictates how the buffer should be read and what the instance buffer data represents
+            this.__inputLayout = device.createInputLayout({
+                vertexBufferDescriptors: [
                 {
-                    shaderLocation: 0,
-                    offset: 0,
-                    format: Format.F32_RG,
+                    arrayStride: 4 * 2,
+                    stepMode: VertexStepMode.VERTEX,
+                    attributes: [
+                        {
+                            shaderLocation: 0,
+                            offset: 0,
+                            format: Format.F32_RG,
+                        },
+                    ],
+                },
+                {
+                    arrayStride: 4 * 8,
+                    stepMode: VertexStepMode.INSTANCE,
+                    attributes: [
+                        {
+                            shaderLocation: 1,          // circle center
+                            offset: 0,
+                            format: Format.F32_RG,
+                        },
+                        {
+                            shaderLocation: 2,          // circle radius
+                            offset: 4 * 2,
+                            format: Format.F32_RG,
+                        },
+                        {
+                            shaderLocation: 3,          // circle color
+                            offset: 4 * 4,
+                            format: Format.F32_RGBA,
+                        },
+                    ],
                 },
                 ],
-            },
-            {
-                arrayStride: 4 * 8,
-                stepMode: VertexStepMode.INSTANCE,
-                attributes: [
-                {
-                    shaderLocation: 1,
-                    offset: 0,
-                    format: Format.F32_RG,
-                },
-                {
-                    shaderLocation: 2,
-                    offset: 4 * 2,
-                    format: Format.F32_RG,
-                },
-                {
-                    shaderLocation: 3,
-                    offset: 4 * 4,
-                    format: Format.F32_RGBA,
-                },
+                indexBufferFormat: Format.U32_R,
+                program: this.__program,
+            });
+
+            this.__pipeline = device.createRenderPipeline({
+                inputLayout: this.__inputLayout,
+                program: this.__program,
+                colorAttachmentFormats: [Format.U8_RGBA_RT],
+                megaStateDescriptor: {
+                attachmentsState: [
+                    {
+                    channelWriteMask: ChannelWriteMask.ALL,
+                    rgbBlendState: {
+                        blendMode: BlendMode.ADD,
+                        blendSrcFactor: BlendFactor.SRC_ALPHA,
+                        blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
+                    },
+                    alphaBlendState: {
+                        blendMode: BlendMode.ADD,
+                        blendSrcFactor: BlendFactor.ONE,
+                        blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
+                    },
+                    },
                 ],
-            },
-            ],
-            indexBufferFormat: Format.U32_R,
-            program: this.__program,
-        });
+                },
+            });
 
-        this.__pipeline = device.createRenderPipeline({
-            inputLayout: this.__inputLayout,
-            program: this.__program,
-            colorAttachmentFormats: [Format.U8_RGBA_RT],
-            megaStateDescriptor: {
-            attachmentsState: [
-                {
-                channelWriteMask: ChannelWriteMask.ALL,
-                rgbBlendState: {
-                    blendMode: BlendMode.ADD,
-                    blendSrcFactor: BlendFactor.SRC_ALPHA,
-                    blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-                },
-                alphaBlendState: {
-                    blendMode: BlendMode.ADD,
-                    blendSrcFactor: BlendFactor.ONE,
-                    blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-                },
-                },
-            ],
-            },
-        });
-
-        this.__bindings = device.createBindings({
-            pipeline: this.__pipeline,
-            uniformBufferBindings: [
-            {
-                buffer: uniformBuffer,
-            },
-            {
-                buffer: this.__uniformBuffer,
-            },
-            ],
-        });
+            this.__bindings = device.createBindings({
+                pipeline: this.__pipeline,
+                uniformBufferBindings: [
+                    { buffer: uniformBuffer },          // scene uniforms (scree size, etc.)
+                    { buffer: this.__uniformBuffer },   // shape transform matrix
+                ],
+            });
         }
 
         const { a, b, c, d, tx, ty } = this.worldTransform;
@@ -220,18 +223,9 @@ export class Circle extends Shape {
             0,
             new Uint8Array(
                 new Float32Array([
-                    a,
-                    b,
-                    0,
-                    PADDING,
-                    c,
-                    d,
-                    0,
-                    PADDING,
-                    tx,
-                    ty,
-                    1,
-                    PADDING,
+                    a,  b,  0, PADDING,
+                    c,  d,  0, PADDING,
+                    tx, ty, 1, PADDING,
                 ]).buffer,
             ),
         );
@@ -241,10 +235,8 @@ export class Circle extends Shape {
                 0,
                 new Uint8Array(
                     new Float32Array([
-                        this.__cx,
-                        this.__cy,
-                        this.__r,
-                        this.__r,
+                        this.__cx, this.__cy,
+                        this.__r, this.__r,
                         this.__fillRGB.r / 255,
                         this.__fillRGB.g / 255,
                         this.__fillRGB.b / 255,
@@ -258,16 +250,10 @@ export class Circle extends Shape {
         renderPass.setVertexInput(
         this.__inputLayout,
             [
-                {
-                    buffer: this.__fragUnitBuffer,
-                },
-                {
-                    buffer: this.__instancedBuffer,
-                },
+                { buffer: this.__fragUnitBuffer },      // vertex positions (unit quad)
+                { buffer: this.__instancedBuffer },     // per-instance data
             ],
-            {
-                buffer: this.__indexBuffer,
-            },
+            { buffer: this.__indexBuffer },             // triangle indices
         );
         renderPass.setBindings(this.__bindings);
         renderPass.drawIndexed(6, 1);
