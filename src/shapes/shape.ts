@@ -119,7 +119,7 @@ export abstract class Shape {
 
     appendChild(child: Shape) {
         if (child.parent) {
-        child.parent.removeChild(child);
+            child.parent.removeChild(child);
         }
 
         child.parent = this;

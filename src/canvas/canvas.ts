@@ -1,8 +1,7 @@
 import { Shape } from "shapes";
-import { Renderer } from "../plugins";
-import { PluginContext } from "../plugins/interfaces";
-import { AsyncParallelHook, SyncHook, traverse } from "../utils";
-import { getGlobalThis } from "../utils/browser";
+import { Renderer, CameraControl, type PluginContext } from "../plugins";
+import { AsyncParallelHook, SyncHook, traverse, getGlobalThis } from "../utils";
+import { Camera } from "./camera";
 
 export interface CanvasConfig {
     canvas: HTMLCanvasElement;
@@ -15,6 +14,11 @@ export class Canvas {
     __instancePromise: Promise<this>;
     __pluginContext!: PluginContext;
     __shapes: Shape[] = [];
+    __camera: Camera;
+
+    get camera() {
+        return this.__camera;
+    }
 
     constructor(config: CanvasConfig) {
         const {
@@ -26,6 +30,11 @@ export class Canvas {
 
         // get global this object
         const globalThis = getGlobalThis();
+        const dpr = devicePixelRatio ?? globalThis.devicePixelRatio;
+
+        const { width, height } = canvas;
+        const camera = new Camera(width / dpr, height / dpr);
+        this.__camera = camera;
 
         this.__pluginContext = {
           globalThis,
@@ -43,12 +52,13 @@ export class Canvas {
             render: new SyncHook<[Shape]>(),
             resize: new SyncHook<[number, number]>(),
           },
+          camera
         };
     
         this.__instancePromise = (async () => {
             const { hooks } = this.__pluginContext;
             // register the hooks to the new renderer plug in we have created here
-            [new Renderer()].forEach((plugin) => {
+            [new CameraControl(), new Renderer()].forEach((plugin) => {
                 plugin.apply(this.__pluginContext);
             });
 
@@ -78,6 +88,7 @@ export class Canvas {
 
     resize(width: number, height: number) {
         const { hooks } = this.__pluginContext;
+        this.__camera.projection(width, height);
         hooks.resize.call(width, height);
     }
 

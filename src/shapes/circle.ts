@@ -1,5 +1,5 @@
 import * as d3 from 'd3-color';
-import { PADDING, Shape } from './shape';
+import { Shape } from './shape';
 import {
     type Device,
     type RenderPass,
@@ -17,6 +17,7 @@ import {
     VertexStepMode,
 } from '@antv/g-device-api';
 import { vert, frag } from '../shaders/sdf';
+import { paddingMat3 } from 'utils';
 
 export enum AntiAliasingType {
     NONE,
@@ -33,6 +34,14 @@ export class Circle extends Shape {
     __pipeline: RenderPipeline;
     __inputLayout: InputLayout;
     __bindings: Bindings;
+    
+    __cx: number;
+    __cy: number;
+    __r: number;
+    __fill: string;
+    __fillRGB: d3.RGBColor;
+    __antiAliasingType = AntiAliasingType.NONE;
+    __uniformBuffer: Buffer;
 
     constructor(
         config: Partial<{
@@ -54,13 +63,6 @@ export class Circle extends Shape {
         this.__antiAliasingType = antiAliasingType;
     }
 
-    __cx: number;
-    __cy: number;
-    __r: number;
-    __fill: string;
-    __fillRGB: d3.RGBColor;
-    __antiAliasingType = AntiAliasingType.NONE;
-    __uniformBuffer: Buffer;
 
     get cx() {
         return this.__cx;
@@ -222,11 +224,7 @@ export class Circle extends Shape {
         this.__uniformBuffer.setSubData(
             0,
             new Uint8Array(
-                new Float32Array([
-                    a,  b,  0, PADDING,
-                    c,  d,  0, PADDING,
-                    tx, ty, 1, PADDING,
-                ]).buffer,
+                new Float32Array(paddingMat3(this.worldTransform.toArray(true))).buffer,
             ),
         );
 

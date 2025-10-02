@@ -4,12 +4,13 @@ import {
     Format,
     TextureUsage,
     TransparentWhite,
-WebGLDeviceContribution,
-WebGPUDeviceContribution,
+    WebGLDeviceContribution,
+    WebGPUDeviceContribution,
 } from '@antv/g-device-api';
 import type { SwapChain, DeviceContribution, Device, Buffer, RenderPass, RenderTarget } from '@antv/g-device-api';
 import type { Plugin, PluginContext } from './interfaces';
 import { IDENTITY_TRANSFORM } from 'shapes';
+import { paddingMat3 } from 'utils';
 
 export class Renderer implements Plugin {
     __swapChain!: SwapChain;
@@ -20,8 +21,14 @@ export class Renderer implements Plugin {
 
     // modifies the hooks of therender context passed in directly
     apply(context: PluginContext) {
-        const { hooks, canvas, renderer, shaderCompilerPath, devicePixelRatio } =
-        context;
+        const { 
+            hooks, 
+            canvas, 
+            renderer, 
+            shaderCompilerPath, 
+            devicePixelRatio, 
+            camera 
+        } = context;
 
         // swap chain creation is async
         hooks.initAsync.tapPromise(async () => {
@@ -52,15 +59,17 @@ export class Renderer implements Plugin {
 
             this.__renderTarget = this.__device.createRenderTargetFromTexture(
                 this.__device.createTexture({
-                        format: Format.U8_RGBA_RT,
-                        width,
-                        height,
-                        usage: TextureUsage.RENDER_TARGET,
-                    }),
+                    format: Format.U8_RGBA_RT,
+                    width,
+                    height,
+                    usage: TextureUsage.RENDER_TARGET,
+                }),
             );
 
             this.__uniformBuffer = this.__device.createBuffer({
                 viewOrSize: new Float32Array([
+                    ...paddingMat3(camera.projectionMatrix),
+                    ...paddingMat3(camera.viewMatrix),
                     width / devicePixelRatio,
                     height / devicePixelRatio,
                 ]),
@@ -70,7 +79,9 @@ export class Renderer implements Plugin {
         });
 
         hooks.resize.tap((width : number, height : number) => {
-            if (!devicePixelRatio) return;
+            // if (!devicePixelRatio) return;
+
+            // reconfigure swap chain to take care of resize
             this.__swapChain.configureSwapChain(
                 width * devicePixelRatio,
                 height * devicePixelRatio,
@@ -79,6 +90,7 @@ export class Renderer implements Plugin {
             if (this.__renderTarget) {
                 this.__renderTarget.destroy();
                 this.__renderTarget = this.__device.createRenderTargetFromTexture(
+                    // off-screen render target to match physical pixels against css pixels
                     this.__device.createTexture({
                         format: Format.U8_RGBA_RT,
                         width: width * devicePixelRatio,
@@ -100,22 +112,28 @@ export class Renderer implements Plugin {
             const { width, height } = this.__swapChain.getCanvas();
             const onscreenTexture = this.__swapChain.getOnscreenTexture();
 
+            // stores logical dimensions
             this.__uniformBuffer.setSubData(
                 0,
                 new Uint8Array(
-                new Float32Array([
-                    width / devicePixelRatio,
-                    height / devicePixelRatio,
-                ]).buffer,
+                    new Float32Array([
+                        ...paddingMat3(camera.projectionMatrix),
+                        ...paddingMat3(camera.viewMatrix),
+                        width / devicePixelRatio,
+                        height / devicePixelRatio,
+                    ]).buffer,
                 ),
             );
 
             this.__device.beginFrame();
 
+            // renderPass is a command recorder that group together all the drawing operations for a single frame
             this.__renderPass = this.__device.createRenderPass({
-                colorAttachment: [this.__renderTarget],
-                colorResolveTo: [onscreenTexture],
-                colorClearColor: [TransparentWhite],
+                // can perform sample at the attachment/off-screen calculation
+                colorAttachment: [this.__renderTarget],     // where to draw
+                // resolve on screen with average value
+                colorResolveTo: [onscreenTexture],          // final destination
+                colorClearColor: [TransparentWhite],        // background color
             });
 
             this.__renderPass.setViewport(0, 0, width, height);

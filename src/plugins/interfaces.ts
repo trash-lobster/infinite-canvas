@@ -1,5 +1,5 @@
 import { Shape } from 'shapes';
-import { CanvasConfig } from '../canvas';
+import { Camera, CanvasConfig } from '../canvas';
 import { AsyncParallelHook, SyncHook } from '../utils';
 
 export interface Hooks {
@@ -33,8 +33,9 @@ export type PluginContext = {
      * in CSS pixels for the current display device.
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
      */
-    // devicePixelRatio: number;
+    devicePixelRatio: number;
     hooks: Hooks;
+    camera: Camera;
 } & CanvasConfig;
 
 export interface Plugin {
