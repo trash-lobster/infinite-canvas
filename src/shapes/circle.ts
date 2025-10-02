@@ -43,6 +43,8 @@ export class Circle extends Shape {
     __antiAliasingType = AntiAliasingType.NONE;
     __uniformBuffer: Buffer;
 
+    __name : string;
+
     constructor(
         config: Partial<{
             cx: number;
@@ -51,6 +53,7 @@ export class Circle extends Shape {
             fill: string;
             antiAliasingType: AntiAliasingType;
         }> = {},
+        name: string
     ) {
         super();
 
@@ -61,6 +64,7 @@ export class Circle extends Shape {
         this.r = r ?? 0;
         this.fill = fill ?? 'black';
         this.__antiAliasingType = antiAliasingType;
+        this.__name = name;
     }
 
 
@@ -121,7 +125,7 @@ export class Circle extends Shape {
             });
 
             this.__uniformBuffer = device.createBuffer({
-                viewOrSize: Float32Array.BYTES_PER_ELEMENT * 12, // mat4
+                viewOrSize: Float32Array.BYTES_PER_ELEMENT * 16, // mat4
                 usage: BufferUsage.UNIFORM,
                 hint: BufferFrequencyHint.DYNAMIC,
             });
@@ -219,8 +223,6 @@ export class Circle extends Shape {
             });
         }
 
-        const { a, b, c, d, tx, ty } = this.worldTransform;
-
         this.__uniformBuffer.setSubData(
             0,
             new Uint8Array(
@@ -229,6 +231,7 @@ export class Circle extends Shape {
         );
 
         if (this.renderDirtyFlag) {
+            console.log(`${this.__name} is re-rendering`);
             this.__instancedBuffer.setSubData(
                 0,
                 new Uint8Array(
@@ -246,7 +249,7 @@ export class Circle extends Shape {
 
         renderPass.setPipeline(this.__pipeline);
         renderPass.setVertexInput(
-        this.__inputLayout,
+            this.__inputLayout,
             [
                 { buffer: this.__fragUnitBuffer },      // vertex positions (unit quad)
                 { buffer: this.__instancedBuffer },     // per-instance data

@@ -2,14 +2,16 @@ import { mat3, vec2 } from 'gl-matrix';
 import type { Plugin, PluginContext } from './interfaces';
 
 const MIN_ZOOM = 0.02;
-const MAX_ZOOM = 100;
+const MAX_ZOOM = 4;
 
 /**
  * @see https://webglfundamentals.org/webgl/lessons/webgl-qna-how-to-implement-zoom-from-mouse-in-2d-webgl.html
  */
 export class CameraControl implements Plugin {
     apply(context: PluginContext) {
-        const { canvas, camera } = context;
+        const { canvas, 
+            camera
+         } = context;
 
         const startInvertViewProjectionMatrix = mat3.create();
         let startCameraX: number;

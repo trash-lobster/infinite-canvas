@@ -9,8 +9,19 @@ import {
 } from '@antv/g-device-api';
 import type { SwapChain, DeviceContribution, Device, Buffer, RenderPass, RenderTarget } from '@antv/g-device-api';
 import type { Plugin, PluginContext } from './interfaces';
-import { IDENTITY_TRANSFORM } from 'shapes';
+import { IDENTITY_TRANSFORM, Grid, Grid2 } from 'shapes';
 import { paddingMat3 } from 'utils';
+
+export enum GridImplementation {
+    LINE_GEOMETRY,
+    SCREEN_SPACE,
+}
+
+export enum CheckboardStyle {
+    NONE,
+    GRID,
+    DOTS,
+}
 
 export class Renderer implements Plugin {
     __swapChain!: SwapChain;
@@ -18,6 +29,11 @@ export class Renderer implements Plugin {
     __renderTarget: RenderTarget;
     __renderPass: RenderPass;
     __uniformBuffer: Buffer;
+
+    __gridImplementation: GridImplementation = GridImplementation.SCREEN_SPACE;
+    __checkboardStyle: CheckboardStyle = CheckboardStyle.GRID;
+    __grid: Grid;
+    __grid2: Grid2;
 
     // modifies the hooks of therender context passed in directly
     apply(context: PluginContext) {
@@ -27,7 +43,7 @@ export class Renderer implements Plugin {
             renderer, 
             shaderCompilerPath, 
             devicePixelRatio, 
-            camera 
+            // camera
         } = context;
 
         // swap chain creation is async
@@ -68,14 +84,25 @@ export class Renderer implements Plugin {
 
             this.__uniformBuffer = this.__device.createBuffer({
                 viewOrSize: new Float32Array([
-                    ...paddingMat3(camera.projectionMatrix),
-                    ...paddingMat3(camera.viewMatrix),
+                    // ...paddingMat3(camera.projectionMatrix),
+                    // ...paddingMat3(camera.viewMatrix),
+                    // ...paddingMat3(camera.viewProjectionMatrixInv),
+                    // camera.zoom,
+                    // this.__checkboardStyle,
+                    // 0,
+                    // 0,
                     width / devicePixelRatio,
                     height / devicePixelRatio,
                 ]),
                 usage: BufferUsage.UNIFORM,
                 hint: BufferFrequencyHint.DYNAMIC,
             });
+
+            if (this.__gridImplementation === GridImplementation.LINE_GEOMETRY) {
+                this.__grid = new Grid(1 / devicePixelRatio);
+            } else {
+                this.__grid2 = new Grid2();
+            }
         });
 
         hooks.resize.tap((width : number, height : number) => {
@@ -102,6 +129,11 @@ export class Renderer implements Plugin {
         });
 
         hooks.destroy.tap(() => {
+            if (this.__gridImplementation === GridImplementation.LINE_GEOMETRY) {
+                this.__grid.destroy();
+            } else {
+                this.__grid2.destroy();
+            }
             this.__renderTarget.destroy();
             this.__uniformBuffer.destroy();
             this.__device.destroy();
@@ -117,8 +149,13 @@ export class Renderer implements Plugin {
                 0,
                 new Uint8Array(
                     new Float32Array([
-                        ...paddingMat3(camera.projectionMatrix),
-                        ...paddingMat3(camera.viewMatrix),
+                        // ...paddingMat3(camera.projectionMatrix),
+                        // ...paddingMat3(camera.viewMatrix),
+                        // ...paddingMat3(camera.viewProjectionMatrixInv),
+                        // camera.zoom,
+                        // this.__checkboardStyle,
+                        // 0,
+                        // 0,
                         width / devicePixelRatio,
                         height / devicePixelRatio,
                     ]).buffer,
@@ -137,11 +174,30 @@ export class Renderer implements Plugin {
             });
 
             this.__renderPass.setViewport(0, 0, width, height);
+
+            if (this.__gridImplementation === GridImplementation.LINE_GEOMETRY) {
+                if (!this.__grid) {
+                    this.__grid = new Grid(1 / devicePixelRatio);
+                }
+
+                this.__grid.render(
+                    this.__device,
+                    this.__renderPass,
+                    this.__uniformBuffer,
+                    // camera,
+                );
+            } else {
+                this.__grid2.render(this.__device, this.__renderPass, this.__uniformBuffer);
+            }
         });
 
         hooks.endFrame.tap(() => {
             this.__device.submitPass(this.__renderPass);
             this.__device.endFrame();
+
+            if (this.__gridImplementation === GridImplementation.LINE_GEOMETRY) {
+                this.__grid.reset();
+            }
         });
 
         hooks.render.tap((shape) => {
@@ -150,5 +206,13 @@ export class Renderer implements Plugin {
             );
             shape.render(this.__device, this.__renderPass, this.__uniformBuffer);
         });
+    }
+
+    setGridImplementation(implementation: GridImplementation) {
+        this.__gridImplementation = implementation;
+    }
+
+    setCheckboardStyle(style: CheckboardStyle) {
+        this.__checkboardStyle = style;
     }
 }

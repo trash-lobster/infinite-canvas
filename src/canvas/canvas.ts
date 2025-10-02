@@ -1,5 +1,5 @@
 import { Shape } from "shapes";
-import { Renderer, CameraControl, type PluginContext } from "../plugins";
+import { Renderer, CameraControl, type PluginContext, type GridImplementation, type CheckboardStyle } from "../plugins";
 import { AsyncParallelHook, SyncHook, traverse, getGlobalThis } from "../utils";
 import { Camera } from "./camera";
 
@@ -13,12 +13,13 @@ export interface CanvasConfig {
 export class Canvas {
     __instancePromise: Promise<this>;
     __pluginContext!: PluginContext;
+    __rendererPlugin: Renderer;
     __shapes: Shape[] = [];
-    __camera: Camera;
+    // __camera: Camera;
 
-    get camera() {
-        return this.__camera;
-    }
+    // get camera() {
+    //     return this.__camera;
+    // }
 
     constructor(config: CanvasConfig) {
         const {
@@ -33,15 +34,15 @@ export class Canvas {
         const dpr = devicePixelRatio ?? globalThis.devicePixelRatio;
 
         const { width, height } = canvas;
-        const camera = new Camera(width / dpr, height / dpr);
-        this.__camera = camera;
+        // const camera = new Camera(width / dpr, height / dpr);
+        // this.__camera = camera;
 
         this.__pluginContext = {
           globalThis,
           canvas,
           renderer,
           shaderCompilerPath,
-          devicePixelRatio: devicePixelRatio ?? globalThis.devicePixelRatio,
+          devicePixelRatio: dpr,
           // at this point, no hooks are registered.
           hooks: {
             init: new SyncHook<[]>(),
@@ -52,13 +53,16 @@ export class Canvas {
             render: new SyncHook<[Shape]>(),
             resize: new SyncHook<[number, number]>(),
           },
-          camera
+        //   camera
         };
     
         this.__instancePromise = (async () => {
             const { hooks } = this.__pluginContext;
+            this.__rendererPlugin = new Renderer();
             // register the hooks to the new renderer plug in we have created here
-            [new CameraControl(), new Renderer()].forEach((plugin) => {
+            [
+                // new CameraControl(), 
+                this.__rendererPlugin].forEach((plugin) => {
                 plugin.apply(this.__pluginContext);
             });
 
@@ -88,7 +92,7 @@ export class Canvas {
 
     resize(width: number, height: number) {
         const { hooks } = this.__pluginContext;
-        this.__camera.projection(width, height);
+        // this.__camera.projection(width, height);
         hooks.resize.call(width, height);
     }
 
@@ -115,6 +119,14 @@ export class Canvas {
         if (index !== -1) {
             this.__shapes.splice(index, 1);
         }
+    }
+
+    setGridImplementation(implementation: GridImplementation) {
+        this.__rendererPlugin.setGridImplementation(implementation);
+    }
+
+    setCheckboardStyle(style: CheckboardStyle) {
+        this.__rendererPlugin.setCheckboardStyle(style);
     }
 
 }

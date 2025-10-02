@@ -35,7 +35,7 @@ export type PluginContext = {
      */
     devicePixelRatio: number;
     hooks: Hooks;
-    camera: Camera;
+    // camera: Camera;
 } & CanvasConfig;
 
 export interface Plugin {

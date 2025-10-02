@@ -22,6 +22,8 @@ export class Camera {
     __x = 0;
     __y = 0;
     __rotation = 0;
+    __width = 0;
+    __height = 0;
 
     /** Matrix in world space. */
     __matrix = mat3.create();
@@ -47,6 +49,8 @@ export class Camera {
     }
 
     projection(width: number, height: number) {
+        this.__width = width;
+        this.__height = height;
         mat3.projection(this.__projectionMatrix, width, height);
         this.updateViewProjectionMatrix();
     }
@@ -179,7 +183,7 @@ export class Camera {
         let timeStart: number | undefined;
         const destPosition: vec2 = [x, y];
         const destZoomRotation: vec2 = [zoom, rotation];
-        
+
         const animate = (timestamp: number) => {
             if (timeStart === undefined) {
                 timeStart = timestamp;
