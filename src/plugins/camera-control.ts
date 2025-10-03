@@ -9,9 +9,10 @@ const MAX_ZOOM = 4;
  */
 export class CameraControl implements Plugin {
     apply(context: PluginContext) {
-        const { canvas, 
+        const { 
+            canvas, 
             camera
-         } = context;
+        } = context;
 
         const startInvertViewProjectionMatrix = mat3.create();
         let startCameraX: number;

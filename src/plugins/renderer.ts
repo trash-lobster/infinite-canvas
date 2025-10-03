@@ -9,8 +9,8 @@ import {
 } from '@antv/g-device-api';
 import type { SwapChain, DeviceContribution, Device, Buffer, RenderPass, RenderTarget } from '@antv/g-device-api';
 import type { Plugin, PluginContext } from './interfaces';
-import { IDENTITY_TRANSFORM, Grid, Grid2 } from 'shapes';
-import { paddingMat3 } from 'utils';
+import { IDENTITY_TRANSFORM, Grid, Grid2 } from '../shapes';
+import { paddingMat3 } from '../utils';
 
 export enum GridImplementation {
     LINE_GEOMETRY,
@@ -43,7 +43,7 @@ export class Renderer implements Plugin {
             renderer, 
             shaderCompilerPath, 
             devicePixelRatio, 
-            // camera
+            camera
         } = context;
 
         // swap chain creation is async
@@ -84,15 +84,13 @@ export class Renderer implements Plugin {
 
             this.__uniformBuffer = this.__device.createBuffer({
                 viewOrSize: new Float32Array([
-                    // ...paddingMat3(camera.projectionMatrix),
-                    // ...paddingMat3(camera.viewMatrix),
-                    // ...paddingMat3(camera.viewProjectionMatrixInv),
-                    // camera.zoom,
-                    // this.__checkboardStyle,
-                    // 0,
-                    // 0,
-                    width / devicePixelRatio,
-                    height / devicePixelRatio,
+                    ...paddingMat3(camera.projectionMatrix),
+                    ...paddingMat3(camera.viewMatrix),
+                    ...paddingMat3(camera.viewProjectionMatrixInv),
+                    camera.zoom,
+                    this.__checkboardStyle,
+                    0,
+                    0,
                 ]),
                 usage: BufferUsage.UNIFORM,
                 hint: BufferFrequencyHint.DYNAMIC,
@@ -149,15 +147,13 @@ export class Renderer implements Plugin {
                 0,
                 new Uint8Array(
                     new Float32Array([
-                        // ...paddingMat3(camera.projectionMatrix),
-                        // ...paddingMat3(camera.viewMatrix),
-                        // ...paddingMat3(camera.viewProjectionMatrixInv),
-                        // camera.zoom,
-                        // this.__checkboardStyle,
-                        // 0,
-                        // 0,
-                        width / devicePixelRatio,
-                        height / devicePixelRatio,
+                        ...paddingMat3(camera.projectionMatrix),
+                        ...paddingMat3(camera.viewMatrix),
+                        ...paddingMat3(camera.viewProjectionMatrixInv),
+                        camera.zoom,
+                        this.__checkboardStyle,
+                        0,
+                        0,
                     ]).buffer,
                 ),
             );
@@ -184,7 +180,7 @@ export class Renderer implements Plugin {
                     this.__device,
                     this.__renderPass,
                     this.__uniformBuffer,
-                    // camera,
+                    camera,
                 );
             } else {
                 this.__grid2.render(this.__device, this.__renderPass, this.__uniformBuffer);

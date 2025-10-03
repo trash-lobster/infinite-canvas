@@ -124,6 +124,13 @@ export class Camera {
         }
     }
 
+    get width() {
+        return this.__width;
+    }
+    get height() {
+        return this.__height;
+    }
+
     get rotation() {
         return this.__rotation;
     }

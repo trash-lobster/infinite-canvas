@@ -17,7 +17,7 @@ import {
     VertexStepMode,
 } from '@antv/g-device-api';
 import { vert, frag } from '../shaders/sdf';
-import { paddingMat3 } from 'utils';
+import { paddingMat3 } from '../utils';
 
 export enum AntiAliasingType {
     NONE,
@@ -43,8 +43,6 @@ export class Circle extends Shape {
     __antiAliasingType = AntiAliasingType.NONE;
     __uniformBuffer: Buffer;
 
-    __name : string;
-
     constructor(
         config: Partial<{
             cx: number;
@@ -53,7 +51,6 @@ export class Circle extends Shape {
             fill: string;
             antiAliasingType: AntiAliasingType;
         }> = {},
-        name: string
     ) {
         super();
 
@@ -64,9 +61,7 @@ export class Circle extends Shape {
         this.r = r ?? 0;
         this.fill = fill ?? 'black';
         this.__antiAliasingType = antiAliasingType;
-        this.__name = name;
     }
-
 
     get cx() {
         return this.__cx;
@@ -196,21 +191,21 @@ export class Circle extends Shape {
                 program: this.__program,
                 colorAttachmentFormats: [Format.U8_RGBA_RT],
                 megaStateDescriptor: {
-                attachmentsState: [
-                    {
-                    channelWriteMask: ChannelWriteMask.ALL,
-                    rgbBlendState: {
-                        blendMode: BlendMode.ADD,
-                        blendSrcFactor: BlendFactor.SRC_ALPHA,
-                        blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-                    },
-                    alphaBlendState: {
-                        blendMode: BlendMode.ADD,
-                        blendSrcFactor: BlendFactor.ONE,
-                        blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-                    },
-                    },
-                ],
+                    attachmentsState: [
+                        {
+                            channelWriteMask: ChannelWriteMask.ALL,
+                            rgbBlendState: {
+                                blendMode: BlendMode.ADD,
+                                blendSrcFactor: BlendFactor.SRC_ALPHA,
+                                blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
+                            },
+                            alphaBlendState: {
+                                blendMode: BlendMode.ADD,
+                                blendSrcFactor: BlendFactor.ONE,
+                                blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
+                            },
+                        },
+                    ],
                 },
             });
 
@@ -231,13 +226,14 @@ export class Circle extends Shape {
         );
 
         if (this.renderDirtyFlag) {
-            console.log(`${this.__name} is re-rendering`);
             this.__instancedBuffer.setSubData(
                 0,
                 new Uint8Array(
                     new Float32Array([
-                        this.__cx, this.__cy,
-                        this.__r, this.__r,
+                        this.__cx, 
+                        this.__cy,
+                        this.__r, 
+                        this.__r,
                         this.__fillRGB.r / 255,
                         this.__fillRGB.g / 255,
                         this.__fillRGB.b / 255,

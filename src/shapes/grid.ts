@@ -44,7 +44,7 @@ export class Grid {
         device: Device,
         renderPass: RenderPass,
         uniformBuffer: Buffer,
-        // camera: Camera,
+        camera: Camera,
     ) {
         if (!this.__program) {
             this.__program = device.createProgram({
@@ -87,15 +87,12 @@ export class Grid {
             });
         }
 
-        // const { __height : height, __width : width, zoom } = camera;
-
-        const height = 900, width = 900, zoom = 1;
+        const { __height : height, __width : width, zoom } = camera;
 
         const [ox, oy] = vec2.transformMat3(
             vec2.create(),
             [0, 0],
-            // camera.viewMatrix,
-            mat3.create()
+            camera.viewMatrix,
         );
 
         const step = Math.pow(10, Math.round(Math.log(zoom / 32) / Math.log(10)));

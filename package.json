@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npm run test",
     "sortGlossary": "node ./journal/sort.js -f journal/a-glossary.md",
-    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=iife --global-name=InfiniteCanvas"
+    "build": "esbuild src/main.ts --bundle --outfile=dist/index.js --format=iife --global-name=InfiniteCanvas"
   },
   "author": "Vincent Sit",
   "license": "ISC",
@@ -18,6 +18,7 @@
     "@antv/g-device-api": "^1.6.13",
     "@pixi/math": "^7.4.3",
     "bezier-easing": "^2.1.0",
-    "d3-color": "^3.1.0"
+    "d3-color": "^3.1.0",
+    "gl-matrix": "^3.4.4"
   }
 }

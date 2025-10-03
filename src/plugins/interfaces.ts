@@ -1,4 +1,4 @@
-import { Shape } from 'shapes';
+import { Shape } from '../shapes';
 import { Camera, CanvasConfig } from '../canvas';
 import { AsyncParallelHook, SyncHook } from '../utils';
 
@@ -35,8 +35,8 @@ export type PluginContext = {
      */
     devicePixelRatio: number;
     hooks: Hooks;
-    // camera: Camera;
-} & CanvasConfig;
+    camera: Camera;
+};
 
 export interface Plugin {
     /** Get called when the plugin is installed.*/

@@ -32,10 +32,10 @@ export class Grid2 {
         if (!this.__program) {
             this.__program = device.createProgram({
                 vertex: {
-                glsl: vert,
+                    glsl: vert,
                 },
                 fragment: {
-                glsl: frag,
+                    glsl: frag,
                 },
             });
 

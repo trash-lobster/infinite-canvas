@@ -1,9 +1,8 @@
-import { Circle, Group } from "shapes";
+import { Circle, Group } from "./shapes";
 import { Canvas } from "./canvas";
-import { GridImplementation } from "plugins";
 
 async function main() {
-    const __canvas = document.querySelector('#c') as HTMLCanvasElement;
+    const __canvas = document.getElementById('c') as HTMLCanvasElement;
 
     const resize = (width: number, height: number) => {
         __canvas.width = width * window.devicePixelRatio;
@@ -23,9 +22,6 @@ async function main() {
         //     'https://unpkg.com/@antv/g-device-api@1.6.8/dist/pkg/glsl_wgsl_compiler_bg.wasm',
     }).initialized;
 
-    // canvas.camera.x = 300;
-    // canvas.camera.y = 300;
-
     const solarSystem = new Group();
     const earthOrbit = new Group();
     const moonOrbit = new Group();
@@ -35,19 +31,21 @@ async function main() {
         cy: 0,
         r: 100,
         fill: 'red',
-    }, 'sun');
+    });
+
     const earth = new Circle({
         cx: 0,
         cy: 0,
         r: 50,
         fill: 'blue',
-    }, 'earth');
+    });
+
     const moon = new Circle({
         cx: 0,
         cy: 0,
         r: 25,
         fill: 'yellow',
-    }, 'moon');
+    });
 
     solarSystem.appendChild(sun);
     solarSystem.appendChild(earthOrbit);
@@ -62,11 +60,7 @@ async function main() {
 
     canvas.appendChild(solarSystem);
 
-    console.log('Canvas children:', canvas.__shapes.length);
-    console.log('Solar system children:', solarSystem.children.length);
-    
     const animate = () => {
-        // console.log('Camera: ', canvas.camera.x, canvas.camera.y, canvas.camera.zoom);
         solarSystem.rotation += 0.01;
         earthOrbit.rotation += 0.02;
         canvas.render();
