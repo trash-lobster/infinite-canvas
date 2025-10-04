@@ -1,10 +1,10 @@
 import type { AsArray } from './interfaces';
 
 // add callback and allow them to be called sequentially
-export class SyncWaterfallHook<T> {
-    __callbacks: ((...args: AsArray<T>) => T)[] = [];
+export class SyncWaterfallHook<T, R> {
+    __callbacks: ((...args: AsArray<T>) => R)[] = [];
 
-    tap(fn: (...args: AsArray<T>) => T) {
+    tap(fn: (...args: AsArray<T>) => R) {
         this.__callbacks.push(fn);
     }
 

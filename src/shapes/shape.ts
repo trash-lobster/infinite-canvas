@@ -4,18 +4,60 @@ import {
   type Matrix,
   type ObservablePoint,
   type IPointData,
+  type Rectangle,
   RAD_TO_DEG,
   DEG_TO_RAD,
 } from '@pixi/math';
+import { Cursor, FederatedEvent, FederatedEventTarget } from 'events';
+import EventEmitter from 'eventemitter3';
+import { isBoolean, isFunction, isObject } from 'utils';
 
 export const IDENTITY_TRANSFORM = new Transform();
 
-export abstract class Shape {
+export interface ShapeAttributes {
+    pointerEvents: PointerEvents;
+    hitArea: Rectangle;
+    cursor: Cursor;
+    visible: boolean;
+    renderable: boolean;
+    draggable: boolean;
+    droppable: boolean;
+}
+
+type PointerEvents =
+    | 'none'
+    | 'auto'
+    | 'stroke'
+    | 'fill'
+    | 'painted'
+    | 'visible'
+    | 'visiblestroke'
+    | 'visiblefill'
+    | 'visiblepainted'
+    | 'all'
+    | 'non-transparent-pixel';
+
+export abstract class Shape 
+    extends EventEmitter
+    implements FederatedEventTarget
+{
     /**
      * Avoid unnecessary work like updating Buffer by deferring it until needed.
      * @see https://gameprogrammingpatterns.com/dirty-flag.html
      */
     protected renderDirtyFlag = true;
+
+    hitArea: Rectangle;
+
+    /**
+     * @see https://developer.mozilla.org/zh-CN/docs/Web/CSS/pointer-events
+     */
+    pointerEvents: PointerEvents;
+    cursor: Cursor | string;
+    visible: boolean;
+    renderable: boolean;
+    draggable: boolean;
+    droppable: boolean;
 
     /** World transform and local transform of this object. */
     transform = new Transform();
@@ -24,6 +66,77 @@ export abstract class Shape {
     parent: Shape | undefined;
 
     readonly children: Shape[] = [];
+
+    constructor(attributes: Partial<ShapeAttributes> = {}) {
+        super();
+
+        this.cursor = attributes.cursor ?? 'default';
+        this.hitArea = attributes.hitArea;
+        this.pointerEvents = attributes.pointerEvents ?? 'auto';
+        this.visible = attributes.visible ?? true;
+        this.renderable = attributes.renderable ?? true;
+        this.draggable = attributes.draggable ?? false;
+        this.droppable = attributes.droppable ?? false;
+    }
+
+    addEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+    ) {
+        // optionally pass in boolean or check object property
+        const capture =
+            (isBoolean(options) && options) || (isObject(options) && options.capture);
+
+        const signal = isObject(options) ? options.signal : undefined;
+        const once = isObject(options) && options.once;
+        const context = isFunction(listener) ? undefined : listener;
+
+        type = capture ? `${type}capture` : type;
+        const listenerFn = isFunction(listener) ? listener : listener.handleEvent;
+
+        if (signal) {
+            signal.addEventListener('abort', () => {
+                this.off(type, listenerFn, context);
+            });
+        }
+
+        if (once) {
+            this.once(type, listenerFn, context);
+        } else {
+            this.on(type, listenerFn, context);
+        }
+    }
+
+    removeEventListener(
+        type: string,
+        listener?: EventListenerOrEventListenerObject,
+        options?: boolean | EventListenerOptions,
+    ) {
+        const capture =
+        (isBoolean(options) && options) || (isObject(options) && options.capture);
+        const context = isFunction(listener) ? undefined : listener;
+
+        type = capture ? `${type}capture` : type;
+        listener = isFunction(listener) ? listener : listener?.handleEvent;
+
+        this.off(type, listener, context);
+    }
+
+    dispatchEvent(e: Event) {
+        if (!(e instanceof FederatedEvent)) {
+            throw new Error(
+                'Container cannot propagate events outside of the Federated Events API',
+            );
+        }
+
+        e.defaultPrevented = false;
+        e.path = null;
+        e.target = this as unknown as FederatedEventTarget;
+        e.manager.dispatchEvent(e);
+
+        return !e.defaultPrevented;
+    }
 
     abstract render(
         device: Device,
@@ -139,4 +252,35 @@ export abstract class Shape {
 
         return child;
     }
+}
+
+
+export function isFillOrStrokeAffected(
+    pointerEvents: PointerEvents,
+    fill: string,
+    stroke: string,
+): [boolean, boolean] {
+    let hasFill = false;
+    let hasStroke = false;
+    const isFillOtherThanNone = !!fill && fill !== 'none';
+    const isStrokeOtherThanNone = !!stroke && stroke !== 'none';
+    
+    if (
+        pointerEvents === 'visiblepainted' ||
+        pointerEvents === 'painted' ||
+        pointerEvents === 'auto'
+    ) {
+        hasFill = isFillOtherThanNone;
+        hasStroke = isStrokeOtherThanNone;
+    } else if (pointerEvents === 'visiblefill' || pointerEvents === 'fill') {
+        hasFill = true;
+    } else if (pointerEvents === 'visiblestroke' || pointerEvents === 'stroke') {
+        hasStroke = true;
+    } else if (pointerEvents === 'visible' || pointerEvents === 'all') {
+        // The values of the fill and stroke do not affect event processing.
+        hasFill = true;
+        hasStroke = true;
+    }
+
+    return [hasFill, hasStroke];
 }

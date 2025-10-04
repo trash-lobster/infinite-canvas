@@ -4,3 +4,4 @@ export * from './traverse';
 export * from './easing';
 export * from './matrix';
 export * from './converter';
+export * from './lang';
