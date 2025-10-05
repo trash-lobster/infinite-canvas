@@ -48,6 +48,33 @@ Shapes should extend `EventEmitter`, which provides `on`, `once` and `off` metho
 
 `off` is the alias for `removeEventListener` and removes the listener altogether.
 
+### Optimizing event allocation
+Given that each pointer movement/gestures can fire off multiple events per second, creating a new event each time and dispatch it would lead to:
+- Memory allocation: take up heap memory
+- Object construction: initializing objects and its properties
+- Placing the object onto the heap
+- Create a pointer to refer to the object on the heap
+- Eventual garbage collection phase where these dead objects are deallocated
+- All JS execution is paused during garbage collection
+
+This computing stacks up when faced with high interactive applications and will likely lead to lag.
+
+Instead, the infinite canvas apporach uses **memory pool pattern** to reduce the overhead of creating objects and increase performance gain, in exchange for higher memory.
+
+In this pattern, using this implementation as the example, a map is created to track the different event types and an array of the instances created of that kind.
+
+Whenever an event of a specific is needed, the allocation system would find how many of those events is needed, pop them from the array and process them. Subsequently, they will return the event back to the array/pool.
+
+As such, the events in the pool will be created as needed, resulting in a collection of pools at the height of its demand. None of the events will ever be garbage collected unless something higher up in the chain gets collected or the application stops.
+
+It is possible to execute garbage collection manually to ensure that memory pool size is kept to a certain threshold, but that is not necessary in this instance.
+
+Memory pool pattern is also applied when:
+- Gaming: particles and bullets in bullet hell games are candidates for memory pooling since they are repeatedly 'created' on screen but only the max number of objects needed on screen will ever be created.
+- UI elements: repeatively elements will also be recycled as needed
+- Threading: you could identify the peak number of threads you need and work with that as your maximum number of threads and recycle as needed
+- WebGL buffer pooling: the buffers will be reused if the right sized ones are available 
+
 ## Picking
 To determine if a shape has been picked, you ust need to figure out if the point of picking is within graphic objects. An object picked should be added to the front of the list, being of higher layer (introducing z-index later will take care of rendering order).
 

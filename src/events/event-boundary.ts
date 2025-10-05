@@ -73,7 +73,7 @@ const PROPAGATION_LIMIT = 2048;
 export class EventBoundary {
     /**
      * The root event-target residing below the event boundary.
-     * All events are dispatched trickling down and bubbling up to this `rootTarget`.
+     * All events are dispatched trickling down to and bubbling up from this `rootTarget`.
      */
     rootTarget: Shape;
 
@@ -112,8 +112,8 @@ export class EventBoundary {
     protected mappingTable: Record<
         string,
         Array<{
-        fn: (e: FederatedEvent) => void;
-        priority: number;
+            fn: (e: FederatedEvent) => void;
+            priority: number;
         }>
     >;
 
@@ -267,6 +267,7 @@ export class EventBoundary {
         }
 
         // At target phase
+        // set up in such a way that the event is never triggered in capturing phase or bubbling phase
         e.eventPhase = e.AT_TARGET;
         e.currentTarget = e.target;
 
@@ -327,13 +328,13 @@ export class EventBoundary {
             i < PROPAGATION_LIMIT && target !== this.rootTarget && target.parent;
             i++
         ) {
-        if (!target.parent) {
-            throw new Error('Cannot find propagation path to disconnected target');
-        }
+            if (!target.parent) {
+                throw new Error('Cannot find propagation path to disconnected target');
+            }
 
-        propagationPath.push(target.parent);
+            propagationPath.push(target.parent);
 
-        target = target.parent;
+            target = target.parent;
         }
 
         propagationPath.reverse();
@@ -353,9 +354,9 @@ export class EventBoundary {
         type = type ?? e.type;
 
         const key =
-        e.eventPhase === e.CAPTURING_PHASE || e.eventPhase === e.AT_TARGET
-            ? `${type}capture`
-            : type;
+            e.eventPhase === e.CAPTURING_PHASE || e.eventPhase === e.AT_TARGET
+                ? `${type}capture`
+                : type;
 
         this._notifyListeners(e, key);
 
@@ -372,13 +373,13 @@ export class EventBoundary {
      */
     protected mapPointerDown(from: FederatedEvent): void {
         if (!(from instanceof FederatedPointerEvent)) {
-        // #if _DEBUG
-        console.warn(
-            'EventBoundary cannot map a non-pointer event as a pointer event',
-        );
-        // #endif
+            // #if _DEBUG
+            console.warn(
+                'EventBoundary cannot map a non-pointer event as a pointer event',
+            );
+            // #endif
 
-        return;
+            return;
         }
 
         const e = this.createPointerEvent(from);
@@ -386,11 +387,11 @@ export class EventBoundary {
         this.dispatchEvent(e, 'pointerdown');
 
         if (e.pointerType === 'touch') {
-        this.dispatchEvent(e, 'touchstart');
+            this.dispatchEvent(e, 'touchstart');
         } else if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
-        const isRightButton = e.button === 2;
+            const isRightButton = e.button === 2;
 
-        this.dispatchEvent(e, isRightButton ? 'rightdown' : 'mousedown');
+            this.dispatchEvent(e, isRightButton ? 'rightdown' : 'mousedown');
         }
 
         const trackingData = this.trackingData(from.pointerId);
@@ -409,13 +410,13 @@ export class EventBoundary {
      */
     protected mapPointerMove(from: FederatedEvent): void {
         if (!(from instanceof FederatedPointerEvent)) {
-        // #if _DEBUG
-        console.warn(
-            'EventBoundary cannot map a non-pointer event as a pointer event',
-        );
-        // #endif
+            // #if _DEBUG
+            console.warn(
+                'EventBoundary cannot map a non-pointer event as a pointer event',
+            );
+            // #endif
 
-        return;
+            return;
         }
 
         this._allInteractiveElements.length = 0;
@@ -430,106 +431,106 @@ export class EventBoundary {
 
         // First pointerout/pointerleave
         if (trackingData.overTargets?.length > 0 && outTarget !== e.target) {
-        // pointerout always occurs on the overTarget when the pointer hovers over another element.
-        const outType = from.type === 'mousemove' ? 'mouseout' : 'pointerout';
-        const outEvent = this.createPointerEvent(from, outType, outTarget);
+            // pointerout always occurs on the overTarget when the pointer hovers over another element.
+            const outType = from.type === 'mousemove' ? 'mouseout' : 'pointerout';
+            const outEvent = this.createPointerEvent(from, outType, outTarget);
 
-        this.dispatchEvent(outEvent, 'pointerout');
-        if (isMouse) this.dispatchEvent(outEvent, 'mouseout');
+            this.dispatchEvent(outEvent, 'pointerout');
+            if (isMouse) this.dispatchEvent(outEvent, 'mouseout');
 
-        // If the pointer exits overTarget and its descendants, then a pointerleave event is also fired. This event
-        // is dispatched to all ancestors that no longer capture the pointer.
-        if (!e.composedPath().includes(outTarget)) {
-            const leaveEvent = this.createPointerEvent(
-            from,
-            'pointerleave',
-            outTarget,
-            );
+            // If the pointer exits overTarget and its descendants, then a pointerleave event is also fired. This event
+            // is dispatched to all ancestors that no longer capture the pointer.
+            if (!e.composedPath().includes(outTarget)) {
+                const leaveEvent = this.createPointerEvent(
+                    from,
+                    'pointerleave',
+                    outTarget,
+                );
 
-            leaveEvent.eventPhase = leaveEvent.AT_TARGET;
+                leaveEvent.eventPhase = leaveEvent.AT_TARGET;
 
-            while (
-            leaveEvent.target &&
-            !e.composedPath().includes(leaveEvent.target)
-            ) {
-            leaveEvent.currentTarget = leaveEvent.target;
+                while (
+                    leaveEvent.target &&
+                    !e.composedPath().includes(leaveEvent.target)
+                ) {
+                    leaveEvent.currentTarget = leaveEvent.target;
 
-            this.notifyTarget(leaveEvent);
-            if (isMouse) this.notifyTarget(leaveEvent, 'mouseleave');
+                    this.notifyTarget(leaveEvent);
+                    if (isMouse) this.notifyTarget(leaveEvent, 'mouseleave');
 
-            leaveEvent.target = leaveEvent.target.parent;
+                    leaveEvent.target = leaveEvent.target.parent;
+                }
+
+                this.freeEvent(leaveEvent);
             }
 
-            this.freeEvent(leaveEvent);
-        }
-
-        this.freeEvent(outEvent);
+            this.freeEvent(outEvent);
         }
 
         // Then pointerover
         if (outTarget !== e.target) {
-        // pointerover always occurs on the new overTarget
-        const overType = from.type === 'mousemove' ? 'mouseover' : 'pointerover';
-        const overEvent = this.clonePointerEvent(e, overType); // clone faster
+            // pointerover always occurs on the new overTarget
+            const overType = from.type === 'mousemove' ? 'mouseover' : 'pointerover';
+            const overEvent = this.clonePointerEvent(e, overType); // clone faster than create new pointer event
 
-        this.dispatchEvent(overEvent, 'pointerover');
-        if (isMouse) this.dispatchEvent(overEvent, 'mouseover');
+            this.dispatchEvent(overEvent, 'pointerover');
+            if (isMouse) this.dispatchEvent(overEvent, 'mouseover');
 
-        // Probe whether the newly hovered Container is an ancestor of the original overTarget.
-        let overTargetAncestor = outTarget?.parent;
-
-        while (
-            overTargetAncestor &&
-            overTargetAncestor !== this.rootTarget.parent
-        ) {
-            if (overTargetAncestor === e.target) break;
-
-            overTargetAncestor = overTargetAncestor.parent;
-        }
-
-        // The pointer has entered a non-ancestor of the original overTarget. This means we need a pointerentered
-        // event.
-        const didPointerEnter =
-            !overTargetAncestor || overTargetAncestor === this.rootTarget.parent;
-
-        if (didPointerEnter) {
-            const enterEvent = this.clonePointerEvent(e, 'pointerenter');
-
-            enterEvent.eventPhase = enterEvent.AT_TARGET;
+            // Probe whether the newly hovered Container is an ancestor of the original overTarget.
+            let overTargetAncestor = outTarget?.parent;
 
             while (
-            enterEvent.target &&
-            enterEvent.target !== outTarget &&
-            enterEvent.target !== this.rootTarget.parent
+                overTargetAncestor &&
+                overTargetAncestor !== this.rootTarget.parent
             ) {
-            enterEvent.currentTarget = enterEvent.target;
+                if (overTargetAncestor === e.target) break;
 
-            this.notifyTarget(enterEvent);
-            if (isMouse) this.notifyTarget(enterEvent, 'mouseenter');
-
-            enterEvent.target = enterEvent.target.parent;
+                overTargetAncestor = overTargetAncestor.parent;
             }
 
-            this.freeEvent(enterEvent);
-        }
+            // The pointer has entered a non-ancestor of the original overTarget. This means we need a pointerentered
+            // event.
+            const didPointerEnter =
+                !overTargetAncestor || overTargetAncestor === this.rootTarget.parent;
 
-        this.freeEvent(overEvent);
+            if (didPointerEnter) {
+                const enterEvent = this.clonePointerEvent(e, 'pointerenter');
+
+                enterEvent.eventPhase = enterEvent.AT_TARGET;
+
+                while (
+                    enterEvent.target &&
+                    enterEvent.target !== outTarget &&
+                    enterEvent.target !== this.rootTarget.parent
+                ) {
+                    enterEvent.currentTarget = enterEvent.target;
+
+                    this.notifyTarget(enterEvent);
+                    if (isMouse) this.notifyTarget(enterEvent, 'mouseenter');
+
+                    enterEvent.target = enterEvent.target.parent;
+                }
+
+                this.freeEvent(enterEvent);
+            }
+
+            this.freeEvent(overEvent);
         }
 
         const allMethods: string[] = [];
         const allowGlobalPointerEvents = this.enableGlobalMoveEvents ?? true;
 
         this.moveOnAll
-        ? allMethods.push('pointermove')
-        : this.dispatchEvent(e, 'pointermove');
+            ? allMethods.push('pointermove')
+            : this.dispatchEvent(e, 'pointermove');
         allowGlobalPointerEvents && allMethods.push('globalpointermove');
 
         // Then pointermove
         if (e.pointerType === 'touch') {
-        this.moveOnAll
-            ? allMethods.splice(1, 0, 'touchmove')
-            : this.dispatchEvent(e, 'touchmove');
-        allowGlobalPointerEvents && allMethods.push('globaltouchmove');
+            this.moveOnAll
+                ? allMethods.splice(1, 0, 'touchmove')
+                : this.dispatchEvent(e, 'touchmove');
+            allowGlobalPointerEvents && allMethods.push('globaltouchmove');
         }
 
         if (isMouse) {
@@ -869,19 +870,19 @@ export class EventBoundary {
         propagationPath: FederatedEventTarget[],
     ): FederatedEventTarget {
         if (!propagationPath) {
-        return null;
+            return null;
         }
 
         let currentTarget = propagationPath[0];
 
         for (let i = 1; i < propagationPath.length; i++) {
-        // Set currentTarget to the next target in the path only if it is still attached to the
-        // scene graph (i.e. parent still points to the expected ancestor).
-        if (propagationPath[i].parent === currentTarget) {
-            currentTarget = propagationPath[i];
-        } else {
-            break;
-        }
+            // Set currentTarget to the next target in the path only if it is still attached to the
+            // scene graph (i.e. parent still points to the expected ancestor).
+            if (propagationPath[i].parent === currentTarget) {
+                currentTarget = propagationPath[i];
+            } else {
+                break;
+            }
         }
 
         return currentTarget;
@@ -909,12 +910,12 @@ export class EventBoundary {
         event.nativeEvent = from.nativeEvent;
         event.originalEvent = from;
         event.target =
-        target ??
-        (this.hitTest(event.global.x, event.global.y) as FederatedEventTarget) ??
-        this._hitElements[0];
+            target ??
+            (this.hitTest(event.global.x, event.global.y) as FederatedEventTarget) ??
+            this._hitElements[0];
 
         if (typeof type === 'string') {
-        event.type = type;
+            event.type = type;
         }
 
         return event;
@@ -1007,10 +1008,10 @@ export class EventBoundary {
      */
     protected copyPointerData(from: FederatedEvent, to: FederatedEvent): void {
         if (
-        !(
-            from instanceof FederatedPointerEvent &&
-            to instanceof FederatedPointerEvent
-        )
+            !(
+                from instanceof FederatedPointerEvent &&
+                to instanceof FederatedPointerEvent
+            )
         )
         return;
 
@@ -1119,12 +1120,12 @@ export class EventBoundary {
         new (boundary: EventBoundary): T;
     }): T {
         if (!this.eventPool.has(constructor as any)) {
-        this.eventPool.set(constructor as any, []);
+            this.eventPool.set(constructor as any, []);
         }
 
         const event =
-        (this.eventPool.get(constructor as any).pop() as T) ||
-        new constructor(this);
+            (this.eventPool.get(constructor as any).pop() as T) ||
+            new constructor(this);
 
         event.eventPhase = event.NONE;
         event.currentTarget = null;
@@ -1147,14 +1148,14 @@ export class EventBoundary {
      */
     protected freeEvent<T extends FederatedEvent>(event: T): void {
         if (event.manager !== this)
-        throw new Error(
-            'It is illegal to free an event not managed by this EventBoundary!',
-        );
+            throw new Error(
+                'It is illegal to free an event not managed by this EventBoundary!',
+            );
 
         const constructor = event.constructor;
 
         if (!this.eventPool.has(constructor as any)) {
-        this.eventPool.set(constructor as any, []);
+            this.eventPool.set(constructor as any, []);
         }
 
         this.eventPool.get(constructor as any).push(event);

@@ -33,6 +33,13 @@ async function main() {
         fill: 'red',
     });
 
+    sun.addEventListener('pointerenter', () => {
+        sun.fill = 'green';
+    });
+    sun.addEventListener('pointerleave', () => {
+        sun.fill = 'red';
+    });
+
     const earth = new Circle({
         cx: 0,
         cy: 0,
