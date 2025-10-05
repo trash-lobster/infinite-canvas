@@ -1,16 +1,16 @@
 import type { Buffer, Device, RenderPass } from '@antv/g-device-api';
 import {
-  Transform,
-  type Matrix,
-  type ObservablePoint,
-  type IPointData,
-  type Rectangle,
-  RAD_TO_DEG,
-  DEG_TO_RAD,
+    Transform,
+    Matrix,
+    type ObservablePoint,
+    type IPointData,
+    type Rectangle,
+    RAD_TO_DEG,
+    DEG_TO_RAD,
 } from '@pixi/math';
-import { Cursor, FederatedEvent, FederatedEventTarget } from 'events';
 import EventEmitter from 'eventemitter3';
-import { isBoolean, isFunction, isObject } from 'utils';
+import { Cursor, FederatedEvent, FederatedEventTarget } from '../events';
+import { isBoolean, isFunction, isObject } from '../utils';
 
 export const IDENTITY_TRANSFORM = new Transform();
 
@@ -24,20 +24,7 @@ export interface ShapeAttributes {
     droppable: boolean;
 }
 
-type PointerEvents =
-    | 'none'
-    | 'auto'
-    | 'stroke'
-    | 'fill'
-    | 'painted'
-    | 'visible'
-    | 'visiblestroke'
-    | 'visiblefill'
-    | 'visiblepainted'
-    | 'all'
-    | 'non-transparent-pixel';
-
-export abstract class Shape 
+export abstract class Shape
     extends EventEmitter
     implements FederatedEventTarget
 {
@@ -48,7 +35,6 @@ export abstract class Shape
     protected renderDirtyFlag = true;
 
     hitArea: Rectangle;
-
     /**
      * @see https://developer.mozilla.org/zh-CN/docs/Web/CSS/pointer-events
      */
@@ -59,10 +45,11 @@ export abstract class Shape
     draggable: boolean;
     droppable: boolean;
 
-    /** World transform and local transform of this object. */
+    /**
+     * World transform and local transform of this object.
+     */
     transform = new Transform();
 
-    /** Parent of this object. */
     parent: Shape | undefined;
 
     readonly children: Shape[] = [];
@@ -84,10 +71,8 @@ export abstract class Shape
         listener: EventListenerOrEventListenerObject,
         options?: boolean | AddEventListenerOptions,
     ) {
-        // optionally pass in boolean or check object property
         const capture =
-            (isBoolean(options) && options) || (isObject(options) && options.capture);
-
+        (isBoolean(options) && options) || (isObject(options) && options.capture);
         const signal = isObject(options) ? options.signal : undefined;
         const once = isObject(options) && options.once;
         const context = isFunction(listener) ? undefined : listener;
@@ -145,6 +130,8 @@ export abstract class Shape
     ): void;
 
     abstract destroy(): void;
+
+    abstract containsPoint(x: number, y: number): boolean;
 
     /**
      * Current transform of the object based on world (parent) factors.
@@ -252,8 +239,7 @@ export abstract class Shape
 
         return child;
     }
-}
-
+    }
 
 export function isFillOrStrokeAffected(
     pointerEvents: PointerEvents,
@@ -264,7 +250,6 @@ export function isFillOrStrokeAffected(
     let hasStroke = false;
     const isFillOtherThanNone = !!fill && fill !== 'none';
     const isStrokeOtherThanNone = !!stroke && stroke !== 'none';
-    
     if (
         pointerEvents === 'visiblepainted' ||
         pointerEvents === 'painted' ||
@@ -284,3 +269,16 @@ export function isFillOrStrokeAffected(
 
     return [hasFill, hasStroke];
 }
+
+type PointerEvents =
+    | 'none'
+    | 'auto'
+    | 'stroke'
+    | 'fill'
+    | 'painted'
+    | 'visible'
+    | 'visiblestroke'
+    | 'visiblefill'
+    | 'visiblepainted'
+    | 'all'
+    | 'non-transparent-pixel';

@@ -123,7 +123,7 @@ export class DOMEventListener implements Plugin {
             removeMouseEventListener(canvas);
 
             if (supportsTouchEvents) {
-            removeTouchEventListener(canvas);
+                removeTouchEventListener(canvas);
             }
         }
 

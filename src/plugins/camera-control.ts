@@ -1,18 +1,36 @@
 import { mat3, vec2 } from 'gl-matrix';
 import type { Plugin, PluginContext } from './interfaces';
+import { IPointData, Point, Rectangle } from '@pixi/math';
+import { FederatedPointerEvent, FederatedWheelEvent } from 'events';
 
 const MIN_ZOOM = 0.02;
 const MAX_ZOOM = 4;
+const PINCH_FACTOR = 100;
 
 /**
  * @see https://webglfundamentals.org/webgl/lessons/webgl-qna-how-to-implement-zoom-from-mouse-in-2d-webgl.html
  */
 export class CameraControl implements Plugin {
+    #isMouseDown?: boolean;
+    #touches: Record<number, { last: IPointData | null }> = {};
+    #isPinch?: boolean;
+    #pinching = false;
+
     apply(context: PluginContext) {
         const { 
             canvas, 
-            camera
+            camera,
+            root,
+            api: { client2Viewport, viewport2Canvas },
         } = context;
+
+        root.hitArea = new Rectangle(
+            -Number.MAX_VALUE,
+            -Number.MAX_VALUE,
+            Infinity,
+            Infinity,
+        );
+        root.draggable = true;
 
         const startInvertViewProjectionMatrix = mat3.create();
         let startCameraX: number;
@@ -22,7 +40,7 @@ export class CameraControl implements Plugin {
         let startMousePos: vec2;
         let rotate = false;
 
-        function getClipSpaceMousePosition(e: MouseEvent): vec2 {
+        function getClipSpaceMousePosition(e: FederatedPointerEvent): vec2 {
             // get canvas relative css position
             const rect = canvas.getBoundingClientRect();
             const cssX = e.clientX - rect.left;
@@ -39,7 +57,7 @@ export class CameraControl implements Plugin {
             return [clipX, clipY];
         }
 
-        function moveCamera(e: MouseEvent) {
+        function moveCamera(e: FederatedPointerEvent) {
             const pos = vec2.transformMat3(
                 vec2.create(),
                 getClipSpaceMousePosition(e),
@@ -72,24 +90,10 @@ export class CameraControl implements Plugin {
             camera.y = camMat[7];
         }
 
-        function handleMouseMove(e: MouseEvent) {
-            if (rotate) {
-                rotateCamera(e);
-            } else {
-                moveCamera(e);
+        root.addEventListener('dragstart', (e: FederatedPointerEvent) => {
+            if (this.#isPinch) {
+                return;
             }
-        }
-
-        function handleMouseUp(e: MouseEvent) {
-            rotate = false;
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        }
-
-        canvas.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
 
             rotate = e.shiftKey;
             mat3.copy(
@@ -104,35 +108,146 @@ export class CameraControl implements Plugin {
                 getClipSpaceMousePosition(e),
                 startInvertViewProjectionMatrix,
             );
-            startMousePos = [e.clientX, e.clientY];
+            startMousePos = [e.nativeEvent.clientX, e.nativeEvent.clientY];
         });
 
-        canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const position = getClipSpaceMousePosition(e);
+        root.addEventListener('drag', (e: FederatedPointerEvent) => {
+            if (this.#isPinch) {
+                return;
+            }
 
-            // position before zooming
-            const [preZoomX, preZoomY] = vec2.transformMat3(
-                vec2.create(),
-                position,
-                camera.viewProjectionMatrixInv,
+            if (rotate) {
+                rotateCamera(e);
+            } else {
+                moveCamera(e);
+            }
+        });
+
+        root.addEventListener('dragend', (e: FederatedPointerEvent) => {
+            if (this.#isPinch) {
+                return;
+            }
+                rotate = false;
+        });
+
+        const zoomByPoint = (x: number, y: number, dist: number) => {
+            const { x: preZoomX, y: preZoomY } = viewport2Canvas(
+                client2Viewport({
+                    x,
+                    y,
+                }),
             );
 
             // multiply the wheel movement by the current zoom level
             // so we zoom less when zoomed in and more when zoomed out
-            const newZoom = camera.zoom * Math.pow(2, e.deltaY * -0.01);
+            const newZoom = camera.zoom * Math.pow(2, dist * -0.01);
             camera.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
 
-            // position after zooming
-            const [postZoomX, postZoomY] = vec2.transformMat3(
-                vec2.create(),
-                position,
-                camera.viewProjectionMatrixInv,
+            const { x: postZoomX, y: postZoomY } = viewport2Canvas(
+                client2Viewport({
+                    x,
+                    y,
+                }),
             );
 
             // camera needs to be moved the difference of before and after
+            // camera needs to focus on the point that you started the zoom at
             camera.x += preZoomX - postZoomX;
             camera.y += preZoomY - postZoomY;
+        };
+
+        root.addEventListener('wheel', (e: FederatedWheelEvent) => {
+            e.preventDefault();
+
+            zoomByPoint(e.nativeEvent.clientX, e.nativeEvent.clientY, e.deltaY);
         });
+
+        const down = (event: FederatedPointerEvent) => {
+            if (event.pointerType === 'mouse') {
+                this.#isMouseDown = true;
+            } else if (!this.#touches[event.pointerId]) {
+                this.#touches[event.pointerId] = { last: null };
+            }
+
+            if (this.touchCount >= 2) {
+                this.#isPinch = true;
+            } else {
+                this.#isPinch = false;
+            }
+        };
+
+        const up = (event: FederatedPointerEvent) => {
+            if (event.pointerType === 'mouse') {
+                this.#isMouseDown = false;
+            }
+
+            if (event.pointerType !== 'mouse') {
+                delete this.#touches[event.pointerId];
+            }
+
+            if (this.#pinching) {
+                if (this.touchCount <= 1) {
+                    this.#pinching = false;
+                    this.#isPinch = false;
+                    return true;
+                }
+            }
+        };
+
+        const move = (e: FederatedPointerEvent) => {
+            if (this.touchCount >= 2) {
+                const x = e.global.x;
+                const y = e.global.y;
+                const pointers = this.#touches;
+                const keys = Object.keys(pointers);
+                const firstKey = Number(keys[0]);
+                const secondKey = Number(keys[1]);
+                const first = pointers[firstKey];
+                const second = pointers[secondKey];
+                const last =
+                    first.last && second.last
+                    ? Math.sqrt(
+                        Math.pow(second.last.x - first.last.x, 2) +
+                        Math.pow(second.last.y - first.last.y, 2),
+                    )
+                    : null;
+
+                if (firstKey === e.pointerId) {
+                    first.last = { x, y };
+                } else if (secondKey === e.pointerId) {
+                    second.last = { x, y };
+                }
+
+                if (last) {
+                    const point = new Point(
+                        first.last.x + (second.last.x - first.last.x) / 2,
+                        first.last.y + (second.last.y - first.last.y) / 2,
+                    );
+
+                    const dist = Math.sqrt(
+                        Math.pow(second.last.x - first.last.x, 2) +
+                        Math.pow(second.last.y - first.last.y, 2),
+                    );
+
+                    // if (last/dist - 1) is negative, that measn the points came apart
+                    // meaning that it is a zoom in and vice versa
+                    // moving them together would mean no zoom factor
+                    zoomByPoint(point.x, point.y, (last / dist - 1) * PINCH_FACTOR);
+                } else if (!this.#pinching) {
+                    this.#pinching = true;
+                }
+            }
+        };
+
+        // pinch
+        root.addEventListener('pointerdown', down);
+        root.addEventListener('pointermove', move);
+        root.addEventListener('pointerup', up);
+        root.addEventListener('pointerupoutside', up);
+        root.addEventListener('pointercancel', up);
     }
+
+    get touchCount(): number {
+        return (this.#isMouseDown ? 1 : 0) + Object.keys(this.#touches).length;
+    } 
 }

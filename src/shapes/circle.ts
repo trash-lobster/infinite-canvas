@@ -1,5 +1,4 @@
 import * as d3 from 'd3-color';
-import { Shape } from './shape';
 import {
     type Device,
     type RenderPass,
@@ -16,101 +15,122 @@ import {
     RenderPipeline,
     VertexStepMode,
 } from '@antv/g-device-api';
+import { Shape, ShapeAttributes, isFillOrStrokeAffected } from './shape';
 import { vert, frag } from '../shaders/sdf';
-import { paddingMat3 } from '../utils';
+import { distanceBetweenPoints, paddingMat3 } from '../utils';
 
-export enum AntiAliasingType {
-    NONE,
-    SMOOTHSTEP,
-    DIVIDE,
-    FWIDTH,
+export interface CircleAttributes extends ShapeAttributes {
+    cx: number;
+    cy: number;
+    r: number;
+    fill: string;
+    stroke: string;
+    strokeWidth: number;
 }
 
 export class Circle extends Shape {
-    __program: Program;
-    __fragUnitBuffer: Buffer;
-    __instancedBuffer: Buffer;
-    __indexBuffer: Buffer;
-    __pipeline: RenderPipeline;
-    __inputLayout: InputLayout;
-    __bindings: Bindings;
-    
-    __cx: number;
-    __cy: number;
-    __r: number;
-    __fill: string;
-    __fillRGB: d3.RGBColor;
-    __antiAliasingType = AntiAliasingType.NONE;
-    __uniformBuffer: Buffer;
+    #cx: number;
+    #cy: number;
+    #r: number;
+    #fill: string;
+    #fillRGB: d3.RGBColor;
+    #stroke: string;
+    #strokeRGB: d3.RGBColor;
+    #strokeWidth: number;
 
-    constructor(
-        config: Partial<{
-            cx: number;
-            cy: number;
-            r: number;
-            fill: string;
-            antiAliasingType: AntiAliasingType;
-        }> = {},
-    ) {
-        super();
+    #program: Program;
+    #fragUnitBuffer: Buffer;
+    #instancedBuffer: Buffer;
+    #indexBuffer: Buffer;
+    #uniformBuffer: Buffer;
+    #pipeline: RenderPipeline;
+    #inputLayout: InputLayout;
+    #bindings: Bindings;
 
-        const { cx, cy, r, fill, antiAliasingType } = config;
+    constructor(config: Partial<CircleAttributes> = {}) {
+        super(config);
+
+        const { cx, cy, r, fill, stroke, strokeWidth } = config;
 
         this.cx = cx ?? 0;
         this.cy = cy ?? 0;
         this.r = r ?? 0;
         this.fill = fill ?? 'black';
-        this.__antiAliasingType = antiAliasingType;
+        this.stroke = stroke ?? 'black';
+        this.strokeWidth = strokeWidth ?? 0;
     }
 
     get cx() {
-        return this.__cx;
+        return this.#cx;
     }
 
     set cx(cx: number) {
-        if (this.__cx !== cx) {
-            this.__cx = cx;
+        if (this.#cx !== cx) {
+            this.#cx = cx;
             this.renderDirtyFlag = true;
         }
     }
 
     get cy() {
-        return this.__cy;
+        return this.#cy;
     }
 
     set cy(cy: number) {
-        if (this.__cy !== cy) {
-            this.__cy = cy;
+        if (this.#cy !== cy) {
+            this.#cy = cy;
             this.renderDirtyFlag = true;
         }
     }
 
     get r() {
-        return this.__r;
+        return this.#r;
     }
 
     set r(r: number) {
-        if (this.__r !== r) {
-            this.__r = r;
+        if (this.#r !== r) {
+            this.#r = r;
             this.renderDirtyFlag = true;
         }
     }
 
     get fill() {
-        return this.__fill;
+        return this.#fill;
     }
 
     set fill(fill: string) {
-        if (this.__fill !== fill) {
-        this.__fill = fill;
-        this.__fillRGB = d3.rgb(fill);
-        this.renderDirtyFlag = true;
+        if (this.#fill !== fill) {
+            this.#fill = fill;
+            this.#fillRGB = d3.rgb(fill);
+            this.renderDirtyFlag = true;
+        }
+    }
+
+    get stroke() {
+        return this.#stroke;
+    }
+
+    set stroke(stroke: string) {
+        if (this.#stroke !== stroke) {
+            this.#stroke = stroke;
+            this.#strokeRGB = d3.rgb(stroke);
+            this.renderDirtyFlag = true;
+        }
+    }
+
+    get strokeWidth() {
+        return this.#strokeWidth;
+    }
+
+    set strokeWidth(strokeWidth: number) {
+        if (this.#strokeWidth !== strokeWidth) {
+            this.#strokeWidth = strokeWidth;
+            this.renderDirtyFlag = true;
         }
     }
 
     render(device: Device, renderPass: RenderPass, uniformBuffer: Buffer) {
-        if (!this.__program) {
-            this.__program = device.createProgram({
+        if (!this.#program) {
+            this.#program = device.createProgram({
                 vertex: {
                     glsl: vert,
                 },
@@ -119,106 +139,103 @@ export class Circle extends Shape {
                 },
             });
 
-            this.__uniformBuffer = device.createBuffer({
+            this.#uniformBuffer = device.createBuffer({
                 viewOrSize: Float32Array.BYTES_PER_ELEMENT * 16, // mat4
                 usage: BufferUsage.UNIFORM,
                 hint: BufferFrequencyHint.DYNAMIC,
             });
-
-            // allow you to draw multiple copies of the same geometry with different properties
-            this.__instancedBuffer = device.createBuffer({
+            this.#instancedBuffer = device.createBuffer({
                 viewOrSize: Float32Array.BYTES_PER_ELEMENT * 8,
                 usage: BufferUsage.VERTEX,
                 hint: BufferFrequencyHint.DYNAMIC,
             });
-
-            // defines a unit quad to rasterize fragments on
-            this.__fragUnitBuffer = device.createBuffer({
+            this.#fragUnitBuffer = device.createBuffer({
                 viewOrSize: new Float32Array([-1, -1, 1, -1, 1, 1, -1, 1]),
                 usage: BufferUsage.VERTEX,
                 hint: BufferFrequencyHint.STATIC,
             });
-
-            // tells the GPU how to split the four vertices into two triangles
-            this.__indexBuffer = device.createBuffer({
+            this.#indexBuffer = device.createBuffer({
                 viewOrSize: new Uint32Array([0, 1, 2, 0, 2, 3]),
                 usage: BufferUsage.INDEX,
                 hint: BufferFrequencyHint.STATIC,
             });
 
-            // dictates how the buffer should be read and what the instance buffer data represents
-            this.__inputLayout = device.createInputLayout({
+            this.#inputLayout = device.createInputLayout({
                 vertexBufferDescriptors: [
-                {
-                    arrayStride: 4 * 2,
-                    stepMode: VertexStepMode.VERTEX,
-                    attributes: [
-                        {
-                            shaderLocation: 0,
-                            offset: 0,
-                            format: Format.F32_RG,
-                        },
-                    ],
-                },
-                {
-                    arrayStride: 4 * 8,
-                    stepMode: VertexStepMode.INSTANCE,
-                    attributes: [
-                        {
-                            shaderLocation: 1,          // circle center
-                            offset: 0,
-                            format: Format.F32_RG,
-                        },
-                        {
-                            shaderLocation: 2,          // circle radius
-                            offset: 4 * 2,
-                            format: Format.F32_RG,
-                        },
-                        {
-                            shaderLocation: 3,          // circle color
-                            offset: 4 * 4,
-                            format: Format.F32_RGBA,
-                        },
-                    ],
-                },
+                    {
+                        arrayStride: 4 * 2,
+                        stepMode: VertexStepMode.VERTEX,
+                        attributes: [
+                            {
+                                shaderLocation: 0,
+                                offset: 0,
+                                format: Format.F32_RG,
+                            },
+                        ],
+                    },
+                    {
+                        arrayStride: 4 * 8,
+                        stepMode: VertexStepMode.INSTANCE,
+                        attributes: [
+                            {
+                                shaderLocation: 1,
+                                offset: 0,
+                                format: Format.F32_RG,
+                            },
+                            {
+                                shaderLocation: 2,
+                                offset: 4 * 2,
+                                format: Format.F32_RG,
+                            },
+                            {
+                                shaderLocation: 3,
+                                offset: 4 * 4,
+                                format: Format.F32_RGBA,
+                            },
+                        ],
+                    },
                 ],
                 indexBufferFormat: Format.U32_R,
-                program: this.__program,
+                program: this.#program,
             });
 
-            this.__pipeline = device.createRenderPipeline({
-                inputLayout: this.__inputLayout,
-                program: this.__program,
+            this.#pipeline = device.createRenderPipeline({
+                inputLayout: this.#inputLayout,
+                program: this.#program,
                 colorAttachmentFormats: [Format.U8_RGBA_RT],
                 megaStateDescriptor: {
-                    attachmentsState: [
-                        {
-                            channelWriteMask: ChannelWriteMask.ALL,
-                            rgbBlendState: {
-                                blendMode: BlendMode.ADD,
-                                blendSrcFactor: BlendFactor.SRC_ALPHA,
-                                blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-                            },
-                            alphaBlendState: {
-                                blendMode: BlendMode.ADD,
-                                blendSrcFactor: BlendFactor.ONE,
-                                blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-                            },
+                attachmentsState: [
+                    {
+                        channelWriteMask: ChannelWriteMask.ALL,
+                        rgbBlendState: {
+                            blendMode: BlendMode.ADD,
+                            blendSrcFactor: BlendFactor.SRC_ALPHA,
+                            blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
                         },
-                    ],
+                        alphaBlendState: {
+                            blendMode: BlendMode.ADD,
+                            blendSrcFactor: BlendFactor.ONE,
+                            blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
+                        },
+                    },
+                ],
                 },
             });
 
-            this.__bindings = device.createBindings({
-                pipeline: this.__pipeline,
+            this.#bindings = device.createBindings({
+                pipeline: this.#pipeline,
                 uniformBufferBindings: [
-                    { buffer: uniformBuffer },          // scene uniforms (scree size, etc.)
-                    { buffer: this.__uniformBuffer },   // shape transform matrix
+                    {
+                        buffer: uniformBuffer,
+                    },
+                    {
+                        buffer: this.#uniformBuffer,
+                    },
                 ],
             });
         }
 
-        this.__uniformBuffer.setSubData(
+        this.#uniformBuffer.setSubData(
             0,
             new Uint8Array(
                 new Float32Array(paddingMat3(this.worldTransform.toArray(true))).buffer,
@@ -226,46 +243,73 @@ export class Circle extends Shape {
         );
 
         if (this.renderDirtyFlag) {
-            this.__instancedBuffer.setSubData(
+            this.#instancedBuffer.setSubData(
                 0,
                 new Uint8Array(
                     new Float32Array([
-                        this.__cx, 
-                        this.__cy,
-                        this.__r, 
-                        this.__r,
-                        this.__fillRGB.r / 255,
-                        this.__fillRGB.g / 255,
-                        this.__fillRGB.b / 255,
-                        this.__fillRGB.opacity,
+                        this.#cx,
+                        this.#cy,
+                        this.#r,
+                        this.#r,
+                        this.#fillRGB.r / 255,
+                        this.#fillRGB.g / 255,
+                        this.#fillRGB.b / 255,
+                        this.#fillRGB.opacity,
                     ]).buffer,
                 ),
             );
         }
 
-        renderPass.setPipeline(this.__pipeline);
+        renderPass.setPipeline(this.#pipeline);
         renderPass.setVertexInput(
-            this.__inputLayout,
+        this.#inputLayout,
             [
-                { buffer: this.__fragUnitBuffer },      // vertex positions (unit quad)
-                { buffer: this.__instancedBuffer },     // per-instance data
+                {
+                buffer: this.#fragUnitBuffer,
+                },
+                {
+                buffer: this.#instancedBuffer,
+                },
             ],
-            { buffer: this.__indexBuffer },             // triangle indices
+            {
+                buffer: this.#indexBuffer,
+            },
         );
-        renderPass.setBindings(this.__bindings);
+        renderPass.setBindings(this.#bindings);
         renderPass.drawIndexed(6, 1);
 
         this.renderDirtyFlag = false;
     }
 
     destroy(): void {
-        this.__program.destroy();
-        this.__instancedBuffer.destroy();
-        this.__fragUnitBuffer.destroy();
-        this.__indexBuffer.destroy();
-        this.__uniformBuffer.destroy();
-        this.__pipeline.destroy();
-        this.__inputLayout.destroy();
-        this.__bindings.destroy();
+        this.#program.destroy();
+        this.#instancedBuffer.destroy();
+        this.#fragUnitBuffer.destroy();
+        this.#indexBuffer.destroy();
+        this.#uniformBuffer.destroy();
+        this.#pipeline.destroy();
+        this.#inputLayout.destroy();
+        this.#bindings.destroy();
+    }
+
+    containsPoint(x: number, y: number) {
+        const halfLineWidth = this.#strokeWidth / 2;
+        const absDistance = distanceBetweenPoints(this.#cx, this.#cy, x, y);
+
+        const [hasFill, hasStroke] = isFillOrStrokeAffected(
+            this.pointerEvents,
+            this.#fill,
+            this.#stroke,
+        );
+        if (hasFill) {
+            return absDistance <= this.#r;
+        }
+        if (hasStroke) {
+            return (
+                absDistance >= this.#r - halfLineWidth &&
+                absDistance <= this.#r + halfLineWidth
+            );
+        }
+        return false;
     }
 }
