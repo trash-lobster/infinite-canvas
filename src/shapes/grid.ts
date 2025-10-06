@@ -1,16 +1,16 @@
 import {
-  VertexStepMode,
-  type Device,
-  type InputLayout,
-  type Program,
-  type RenderPipeline,
-  Format,
-  RenderPass,
-  Buffer,
-  Bindings,
-  PrimitiveTopology,
-  BufferUsage,
-  BufferFrequencyHint,
+    VertexStepMode,
+    type Device,
+    type InputLayout,
+    type Program,
+    type RenderPipeline,
+    Format,
+    RenderPass,
+    Buffer,
+    Bindings,
+    PrimitiveTopology,
+    BufferUsage,
+    BufferFrequencyHint,
 } from '@antv/g-device-api';
 import { mat3, vec2 } from 'gl-matrix';
 import { Color } from './color';
@@ -30,7 +30,7 @@ export class Grid {
     __inputLayout: InputLayout;
     __bindings: Bindings;
     __buffer: Buffer;
-    
+
     __vertices = new DataArray();
     __previousColor = Color.TRANSPARENT;
     __previousU = 0;
@@ -44,36 +44,36 @@ export class Grid {
         device: Device,
         renderPass: RenderPass,
         uniformBuffer: Buffer,
-        camera: Camera,
+        camera: Camera
     ) {
         if (!this.__program) {
             this.__program = device.createProgram({
                 vertex: {
-                glsl: vert,
+                    glsl: vert,
                 },
                 fragment: {
-                glsl: frag,
+                    glsl: frag,
                 },
             });
 
             this.__inputLayout = device.createInputLayout({
                 vertexBufferDescriptors: [
-                {
-                    arrayStride: 4 * 5,
-                    stepMode: VertexStepMode.VERTEX,
-                    attributes: [
                     {
-                        format: Format.F32_RGBA,
-                        offset: 0,
-                        shaderLocation: 0,
+                        arrayStride: 4 * 5,
+                        stepMode: VertexStepMode.VERTEX,
+                        attributes: [
+                            {
+                                format: Format.F32_RGBA,
+                                offset: 0,
+                                shaderLocation: 0,
+                            },
+                            {
+                                format: Format.U8_RGBA_NORM,
+                                offset: 4 * 4,
+                                shaderLocation: 1,
+                            },
+                        ],
                     },
-                    {
-                        format: Format.U8_RGBA_NORM,
-                        offset: 4 * 4,
-                        shaderLocation: 1,
-                    },
-                    ],
-                },
                 ],
                 indexBufferFormat: null,
                 program: this.__program,
@@ -87,15 +87,18 @@ export class Grid {
             });
         }
 
-        const { __height : height, __width : width, zoom } = camera;
+        const { __height: height, __width: width, zoom } = camera;
 
         const [ox, oy] = vec2.transformMat3(
             vec2.create(),
             [0, 0],
-            camera.viewMatrix,
+            camera.viewMatrix
         );
 
-        const step = Math.pow(10, Math.round(Math.log(zoom / 32) / Math.log(10)));
+        const step = Math.pow(
+            10,
+            Math.round(Math.log(zoom / 32) / Math.log(10))
+        );
         const ratio = step / zoom;
         const left = Math.ceil(-ox * ratio);
         const top = Math.ceil((height - oy) * -ratio);
@@ -112,17 +115,17 @@ export class Grid {
                 tx,
                 height,
                 x == 0
-                ? isDark
-                    ? Color.WHITE
-                    : Color.BLACK
-                : x % 10 == 0
-                ? isDark
-                    ? 255 | (255 << 8) | (255 << 16) | (127 << 24)
-                    : 0 | (0 << 8) | (0 << 16) | (127 << 24)
-                : isDark
-                ? 255 | (255 << 8) | (255 << 16) | (31 << 24)
-                : 0 | (0 << 8) | (0 << 16) | (31 << 24),
-                x == 0 ? 2 : 1,
+                    ? isDark
+                        ? Color.WHITE
+                        : Color.BLACK
+                    : x % 10 == 0
+                      ? isDark
+                          ? 255 | (255 << 8) | (255 << 16) | (127 << 24)
+                          : 0 | (0 << 8) | (0 << 16) | (127 << 24)
+                      : isDark
+                        ? 255 | (255 << 8) | (255 << 16) | (31 << 24)
+                        : 0 | (0 << 8) | (0 << 16) | (31 << 24),
+                x == 0 ? 2 : 1
             );
         }
 
@@ -134,17 +137,17 @@ export class Grid {
                 width,
                 ty,
                 y == 0
-                ? isDark
-                    ? Color.WHITE
-                    : Color.BLACK
-                : y % 10 == 0
-                ? isDark
-                    ? 255 | (255 << 8) | (255 << 16) | (127 << 24)
-                    : 0 | (0 << 8) | (0 << 16) | (127 << 24)
-                : isDark
-                ? 255 | (255 << 8) | (255 << 16) | (31 << 24)
-                : 0 | (0 << 8) | (0 << 16) | (31 << 24),
-                y == 0 ? 2 : 1,
+                    ? isDark
+                        ? Color.WHITE
+                        : Color.BLACK
+                    : y % 10 == 0
+                      ? isDark
+                          ? 255 | (255 << 8) | (255 << 16) | (127 << 24)
+                          : 0 | (0 << 8) | (0 << 16) | (127 << 24)
+                      : isDark
+                        ? 255 | (255 << 8) | (255 << 16) | (31 << 24)
+                        : 0 | (0 << 8) | (0 << 16) | (31 << 24),
+                y == 0 ? 2 : 1
             );
         }
 
@@ -179,10 +182,10 @@ export class Grid {
                     buffer,
                 },
             ],
-            null,
+            null
         );
         renderPass.draw(data.length / 20);
-  }
+    }
 
     reset() {
         this.__vertices.clear();
@@ -201,7 +204,7 @@ export class Grid {
         y: number,
         u: number,
         v: number,
-        color: number,
+        color: number
     ) {
         this.__previousX = x;
         this.__previousY = y;
@@ -210,23 +213,23 @@ export class Grid {
         this.__previousColor = color;
 
         this.__vertices
-        .appendFloat(x)
-        .appendFloat(y)
-        .appendFloat(u)
-        .appendFloat(v)
-        .appendByte(color & 255)
-        .appendByte((color >> 8) & 255)
-        .appendByte((color >> 16) & 255)
-        .appendByte(color >>> 24);
+            .appendFloat(x)
+            .appendFloat(y)
+            .appendFloat(u)
+            .appendFloat(v)
+            .appendByte(color & 255)
+            .appendByte((color >> 8) & 255)
+            .appendByte((color >> 16) & 255)
+            .appendByte(color >>> 24);
     }
 
     private appendPreviousVertex() {
         this.appendVertex(
-        this.__previousX,
-        this.__previousY,
-        this.__previousU,
-        this.__previousV,
-        this.__previousColor,
+            this.__previousX,
+            this.__previousY,
+            this.__previousU,
+            this.__previousV,
+            this.__previousColor
         );
     }
 
@@ -236,7 +239,7 @@ export class Grid {
         endX: number,
         endY: number,
         color: number,
-        thickness: number,
+        thickness: number
     ) {
         linePoints[0][0] = startX;
         linePoints[0][1] = startY;
@@ -248,7 +251,7 @@ export class Grid {
     private strokeNonOverlappingPolyline(
         points: vec2[],
         color: number,
-        thickness: number,
+        thickness: number
     ) {
         // Need to draw the line wider by one pixel for anti-aliasing
         const aa = (thickness + this.pixelScale) / this.pixelScale;
@@ -280,8 +283,8 @@ export class Grid {
         const dy2 = v12[1] - v02[1];
         const d1 = vec2.len([dx2, dy2]);
         const v3 = halfWidth / d1,
-        vx1 = -dy2 * v3,
-        vy1 = dx2 * v3;
+            vx1 = -dy2 * v3,
+            vy1 = dx2 * v3;
 
         this.appendVertex(v12[0] - vx1, v12[1] - vy1, 0, aa, color);
         this.appendVertex(v12[0] + vx1, v12[1] + vy1, aa, 0, color);

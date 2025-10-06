@@ -1,24 +1,26 @@
 {
-  "name": "infinite-canvas",
-  "version": "1.0.0",
-  "description": "An infinite canvas",
-  "main": "index.js",
-  "scripts": {
-    "test": "npm run test",
-    "sortGlossary": "node ./journal/sort.js -f journal/a-glossary.md",
-    "build": "esbuild src/main.ts --bundle --outfile=dist/index.js --format=iife --global-name=InfiniteCanvas"
-  },
-  "author": "Vincent Sit",
-  "license": "ISC",
-  "devDependencies": {
-    "esbuild": "^0.25.10",
-    "typescript": "^5.9.2"
-  },
-  "dependencies": {
-    "@antv/g-device-api": "^1.6.13",
-    "@pixi/math": "^7.4.3",
-    "bezier-easing": "^2.1.0",
-    "d3-color": "^3.1.0",
-    "gl-matrix": "^3.4.4"
-  }
+    "name": "infinite-canvas",
+    "version": "1.0.0",
+    "description": "An infinite canvas",
+    "main": "index.js",
+    "scripts": {
+        "test": "npm run test",
+        "sortGlossary": "node ./journal/sort.js -f journal/a-glossary.md",
+        "build": "esbuild src/main.ts --bundle --outfile=dist/index.js --format=iife --global-name=InfiniteCanvas",
+        "prettier": "npx prettier . --write"
+    },
+    "author": "Vincent Sit",
+    "license": "ISC",
+    "devDependencies": {
+        "esbuild": "^0.25.10",
+        "prettier": "3.6.2",
+        "typescript": "^5.9.2"
+    },
+    "dependencies": {
+        "@antv/g-device-api": "^1.6.13",
+        "@pixi/math": "^7.4.3",
+        "bezier-easing": "^2.1.0",
+        "d3-color": "^3.1.0",
+        "gl-matrix": "^3.4.4"
+    }
 }

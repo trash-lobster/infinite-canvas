@@ -17,8 +17,8 @@ export class CameraControl implements Plugin {
     #pinching = false;
 
     apply(context: PluginContext) {
-        const { 
-            canvas, 
+        const {
+            canvas,
             camera,
             root,
             api: { client2Viewport, viewport2Canvas },
@@ -28,7 +28,7 @@ export class CameraControl implements Plugin {
             -Number.MAX_VALUE,
             -Number.MAX_VALUE,
             Infinity,
-            Infinity,
+            Infinity
         );
         root.draggable = true;
 
@@ -61,7 +61,7 @@ export class CameraControl implements Plugin {
             const pos = vec2.transformMat3(
                 vec2.create(),
                 getClipSpaceMousePosition(e),
-                startInvertViewProjectionMatrix,
+                startInvertViewProjectionMatrix
             );
 
             camera.x = startCameraX + startPos[0] - pos[0];
@@ -98,7 +98,7 @@ export class CameraControl implements Plugin {
             rotate = e.shiftKey;
             mat3.copy(
                 startInvertViewProjectionMatrix,
-                camera.viewProjectionMatrixInv,
+                camera.viewProjectionMatrixInv
             );
             startCameraX = camera.x;
             startCameraY = camera.y;
@@ -106,7 +106,7 @@ export class CameraControl implements Plugin {
             vec2.transformMat3(
                 startPos,
                 getClipSpaceMousePosition(e),
-                startInvertViewProjectionMatrix,
+                startInvertViewProjectionMatrix
             );
             startMousePos = [e.nativeEvent.clientX, e.nativeEvent.clientY];
         });
@@ -127,7 +127,7 @@ export class CameraControl implements Plugin {
             if (this.#isPinch) {
                 return;
             }
-                rotate = false;
+            rotate = false;
         });
 
         const zoomByPoint = (x: number, y: number, dist: number) => {
@@ -135,7 +135,7 @@ export class CameraControl implements Plugin {
                 client2Viewport({
                     x,
                     y,
-                }),
+                })
             );
 
             // multiply the wheel movement by the current zoom level
@@ -147,7 +147,7 @@ export class CameraControl implements Plugin {
                 client2Viewport({
                     x,
                     y,
-                }),
+                })
             );
 
             // camera needs to be moved the difference of before and after
@@ -206,11 +206,11 @@ export class CameraControl implements Plugin {
                 const second = pointers[secondKey];
                 const last =
                     first.last && second.last
-                    ? Math.sqrt(
-                        Math.pow(second.last.x - first.last.x, 2) +
-                        Math.pow(second.last.y - first.last.y, 2),
-                    )
-                    : null;
+                        ? Math.sqrt(
+                              Math.pow(second.last.x - first.last.x, 2) +
+                                  Math.pow(second.last.y - first.last.y, 2)
+                          )
+                        : null;
 
                 if (firstKey === e.pointerId) {
                     first.last = { x, y };
@@ -221,18 +221,22 @@ export class CameraControl implements Plugin {
                 if (last) {
                     const point = new Point(
                         first.last.x + (second.last.x - first.last.x) / 2,
-                        first.last.y + (second.last.y - first.last.y) / 2,
+                        first.last.y + (second.last.y - first.last.y) / 2
                     );
 
                     const dist = Math.sqrt(
                         Math.pow(second.last.x - first.last.x, 2) +
-                        Math.pow(second.last.y - first.last.y, 2),
+                            Math.pow(second.last.y - first.last.y, 2)
                     );
 
                     // if (last/dist - 1) is negative, that measn the points came apart
                     // meaning that it is a zoom in and vice versa
                     // moving them together would mean no zoom factor
-                    zoomByPoint(point.x, point.y, (last / dist - 1) * PINCH_FACTOR);
+                    zoomByPoint(
+                        point.x,
+                        point.y,
+                        (last / dist - 1) * PINCH_FACTOR
+                    );
                 } else if (!this.#pinching) {
                     this.#pinching = true;
                 }
@@ -249,5 +253,5 @@ export class CameraControl implements Plugin {
 
     get touchCount(): number {
         return (this.#isMouseDown ? 1 : 0) + Object.keys(this.#touches).length;
-    } 
+    }
 }

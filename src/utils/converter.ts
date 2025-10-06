@@ -114,7 +114,7 @@ export class DataArray {
 
     appendByte(value: number): DataArray {
         if (this.count + 1 > this.capacity) {
-          this.grow();
+            this.grow();
         }
 
         this._bytes[this.count] = value;
@@ -129,7 +129,10 @@ export class DataArray {
     }
 
     shortAt(index: number) {
-        return Converter.bytesToShort(this._bytes[index], this._bytes[index + 1]);
+        return Converter.bytesToShort(
+            this._bytes[index],
+            this._bytes[index + 1]
+        );
     }
 
     appendShort(value: number) {
@@ -155,7 +158,7 @@ export class DataArray {
             this._bytes[index],
             this._bytes[index + 1],
             this._bytes[index + 2],
-            this._bytes[index + 3],
+            this._bytes[index + 3]
         );
     }
 
@@ -182,7 +185,7 @@ export class DataArray {
             this._bytes[index],
             this._bytes[index + 1],
             this._bytes[index + 2],
-            this._bytes[index + 3],
+            this._bytes[index + 3]
         );
     }
 

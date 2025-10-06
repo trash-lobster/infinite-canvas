@@ -34,7 +34,7 @@ export interface PixiTouch extends Touch {
  * @memberof events
  */
 export class FederatedEvent<N extends UIEvent | PixiTouch = UIEvent | PixiTouch>
-  implements UIEvent
+    implements UIEvent
 {
     /** Flags whether this event bubbles. This will take effect only if it is set before propagation. */
     bubbles = true;
@@ -153,7 +153,9 @@ export class FederatedEvent<N extends UIEvent | PixiTouch = UIEvent | PixiTouch>
             this.manager &&
             (!this.path || this.path[this.path.length - 1] !== this.target)
         ) {
-            this.path = this.target ? this.manager.propagationPath(this.target) : [];
+            this.path = this.target
+                ? this.manager.propagationPath(this.target)
+                : [];
         }
 
         return this.path;
@@ -168,7 +170,7 @@ export class FederatedEvent<N extends UIEvent | PixiTouch = UIEvent | PixiTouch>
      */
     initEvent(_type: string, _bubbles?: boolean, _cancelable?: boolean): void {
         throw new Error(
-            'initEvent() is a legacy DOM API. It is not implemented in the Federated Events API.',
+            'initEvent() is a legacy DOM API. It is not implemented in the Federated Events API.'
         );
     }
 
@@ -186,10 +188,10 @@ export class FederatedEvent<N extends UIEvent | PixiTouch = UIEvent | PixiTouch>
         _bubblesArg?: boolean,
         _cancelableArg?: boolean,
         _viewArg?: Window | null,
-        _detailArg?: number,
+        _detailArg?: number
     ): void {
         throw new Error(
-            'initUIEvent() is a legacy DOM API. It is not implemented in the Federated Events API.',
+            'initUIEvent() is a legacy DOM API. It is not implemented in the Federated Events API.'
         );
     }
 

@@ -1,10 +1,10 @@
 import {
-  EventBoundary,
-  FederatedWheelEvent,
-  type FederatedMouseEvent,
-  type PixiTouch,
-  FederatedPointerEvent,
-  Cursor,
+    EventBoundary,
+    FederatedWheelEvent,
+    type FederatedMouseEvent,
+    type PixiTouch,
+    FederatedPointerEvent,
+    Cursor,
 } from '../events';
 import { isNil, isUndefined } from '../utils';
 import type { InteractivePointerEvent } from './dom-event-listener';
@@ -59,7 +59,7 @@ export class Event implements Plugin {
                 const nativeEvent = events[i];
                 const federatedEvent = this.bootstrapEvent(
                     this.#rootPointerEvent,
-                    nativeEvent,
+                    nativeEvent
                 );
 
                 this.#rootBoundary.mapEvent(federatedEvent);
@@ -72,7 +72,10 @@ export class Event implements Plugin {
             let target = nativeEvent.target;
 
             // if in shadow DOM use composedPath to access target
-            if (nativeEvent.composedPath && nativeEvent.composedPath().length > 0) {
+            if (
+                nativeEvent.composedPath &&
+                nativeEvent.composedPath().length > 0
+            ) {
                 target = nativeEvent.composedPath()[0];
             }
 
@@ -82,7 +85,7 @@ export class Event implements Plugin {
             for (let i = 0, j = normalizedEvents.length; i < j; i++) {
                 const event = this.bootstrapEvent(
                     this.#rootPointerEvent,
-                    normalizedEvents[i],
+                    normalizedEvents[i]
                 );
 
                 event.type += outside;
@@ -120,7 +123,7 @@ export class Event implements Plugin {
         event.client.x = x;
         event.client.y = y;
         const { x: canvasX, y: canvasY } = this.#context.api.viewport2Canvas(
-            event.client,
+            event.client
         );
         event.screen.x = canvasX;
         event.screen.y = canvasY;
@@ -138,7 +141,7 @@ export class Event implements Plugin {
      */
     private transferMouseData(
         event: FederatedMouseEvent,
-        nativeEvent: MouseEvent,
+        nativeEvent: MouseEvent
     ): void {
         event.isTrusted = nativeEvent.isTrusted;
         event.srcElement = nativeEvent.srcElement;
@@ -167,7 +170,7 @@ export class Event implements Plugin {
     }
 
     private normalizeToPointerEvent(
-        event: InteractivePointerEvent,
+        event: InteractivePointerEvent
     ): PointerEvent[] {
         const { supportsTouchEvents, supportsPointerEvents } = this.#context;
 
@@ -182,20 +185,24 @@ export class Event implements Plugin {
                 if (isUndefined(touch.buttons)) touch.buttons = 1;
                 if (isUndefined(touch.isPrimary)) {
                     touch.isPrimary =
-                        event.touches.length === 1 && event.type === 'touchstart';
+                        event.touches.length === 1 &&
+                        event.type === 'touchstart';
                 }
                 if (isUndefined(touch.width)) touch.width = touch.radiusX || 1;
-                if (isUndefined(touch.height)) touch.height = touch.radiusY || 1;
+                if (isUndefined(touch.height))
+                    touch.height = touch.radiusY || 1;
                 if (isUndefined(touch.tiltX)) touch.tiltX = 0;
                 if (isUndefined(touch.tiltY)) touch.tiltY = 0;
                 if (isUndefined(touch.pointerType)) touch.pointerType = 'touch';
                 // @see https://developer.mozilla.org/zh-CN/docs/Web/API/Touch/identifier
                 if (isUndefined(touch.pointerId))
                     touch.pointerId = touch.identifier || 0;
-                if (isUndefined(touch.pressure)) touch.pressure = touch.force || 0.5;
+                if (isUndefined(touch.pressure))
+                    touch.pressure = touch.force || 0.5;
                 if (isUndefined(touch.twist)) touch.twist = 0;
-                if (isUndefined(touch.tangentialPressure)) touch.tangentialPressure = 0;
-                
+                if (isUndefined(touch.tangentialPressure))
+                    touch.tangentialPressure = 0;
+
                 touch.isNormalized = true;
                 touch.type = event.type;
 
@@ -204,7 +211,8 @@ export class Event implements Plugin {
         } else if (
             !globalThis.MouseEvent ||
             (event instanceof MouseEvent &&
-                (!supportsPointerEvents || !(event instanceof globalThis.PointerEvent)))
+                (!supportsPointerEvents ||
+                    !(event instanceof globalThis.PointerEvent)))
         ) {
             const tempEvent = event as PixiPointerEvent;
             if (isUndefined(tempEvent.isPrimary)) tempEvent.isPrimary = true;
@@ -212,7 +220,8 @@ export class Event implements Plugin {
             if (isUndefined(tempEvent.height)) tempEvent.height = 1;
             if (isUndefined(tempEvent.tiltX)) tempEvent.tiltX = 0;
             if (isUndefined(tempEvent.tiltY)) tempEvent.tiltY = 0;
-            if (isUndefined(tempEvent.pointerType)) tempEvent.pointerType = 'mouse';
+            if (isUndefined(tempEvent.pointerType))
+                tempEvent.pointerType = 'mouse';
             if (isUndefined(tempEvent.pointerId))
                 tempEvent.pointerId = MOUSE_POINTER_ID;
             if (isUndefined(tempEvent.pressure)) tempEvent.pressure = 0.5;
@@ -236,7 +245,7 @@ export class Event implements Plugin {
      */
     private bootstrapEvent(
         event: FederatedPointerEvent,
-        nativeEvent: PointerEvent,
+        nativeEvent: PointerEvent
     ): FederatedPointerEvent {
         event.originalEvent = null;
         event.nativeEvent = nativeEvent;
@@ -257,7 +266,7 @@ export class Event implements Plugin {
         event.client.x = x;
         event.client.y = y;
         const { x: canvasX, y: canvasY } = this.#context.api.viewport2Canvas(
-            event.client,
+            event.client
         );
         event.screen.x = canvasX;
         event.screen.y = canvasY;
@@ -284,7 +293,7 @@ export class Event implements Plugin {
         for (const normalizedEvent of normalizedEvents) {
             const event = this.bootstrapEvent(
                 this.#rootPointerEvent,
-                normalizedEvent,
+                normalizedEvent
             );
 
             this.#rootBoundary.mapEvent(event);
@@ -314,7 +323,7 @@ export class Event implements Plugin {
             x = point.x;
             y = point.y;
         }
-        
+
         return { x, y };
     }
 }

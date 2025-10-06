@@ -7,6 +7,10 @@ export class Group extends Shape {
     containsPoint(x: number, y: number): boolean {
         throw new Error('Method not implemented.');
     }
-    render(device: Device, renderPass: RenderPass, uniformBuffer: Buffer): void {}
+    render(
+        device: Device,
+        renderPass: RenderPass,
+        uniformBuffer: Buffer
+    ): void {}
     destroy(): void {}
 }

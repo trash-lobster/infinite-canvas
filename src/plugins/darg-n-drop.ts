@@ -5,7 +5,7 @@ import type { Plugin, PluginContext } from './interfaces';
 
 function closest(
     el: FederatedEventTarget,
-    selector: (shape: FederatedEventTarget) => boolean,
+    selector: (shape: FederatedEventTarget) => boolean
 ): FederatedEventTarget | null {
     do {
         if (el && selector(el)) return el;
@@ -55,7 +55,10 @@ export class Dragndrop implements Plugin {
 
         const handlePointerdown = (event: FederatedPointerEvent) => {
             const target = event.target as Shape;
-            const draggableEventTarget = closest(target, (s) => s.draggable === true);
+            const draggableEventTarget = closest(
+                target,
+                (s) => s.draggable === true
+            );
 
             if (draggableEventTarget) {
                 // delay triggering dragstart event
@@ -71,17 +74,20 @@ export class Dragndrop implements Plugin {
 
                 const handlePointermove = (event: FederatedPointerEvent) => {
                     if (!dragstartTriggered) {
-                        const timeElapsed = event.timeStamp - dragstartTimeStamp;
+                        const timeElapsed =
+                            event.timeStamp - dragstartTimeStamp;
                         const distanceMoved = distanceBetweenPoints(
                             event.clientX,
                             event.clientY,
-                            ...dragstartClientCoordinates,
+                            ...dragstartClientCoordinates
                         );
 
                         // check thresholds
                         if (
-                            timeElapsed <= this.#options.dragstartTimeThreshold ||
-                            distanceMoved <= this.#options.dragstartDistanceThreshold
+                            timeElapsed <=
+                                this.#options.dragstartTimeThreshold ||
+                            distanceMoved <=
+                                this.#options.dragstartDistanceThreshold
                         ) {
                             return;
                         }
@@ -105,13 +111,14 @@ export class Dragndrop implements Plugin {
 
                     // prevent from picking the dragging element
                     // pick the next one immediately below
-                    const elementBelow = elementsBelow[elementsBelow.indexOf(target) + 1];
+                    const elementBelow =
+                        elementsBelow[elementsBelow.indexOf(target) + 1];
 
                     // droppable needs to be the next one immediately below
                     if (elementBelow) {
                         const droppableBelow = closest(
                             elementBelow,
-                            (s) => s.droppable === true,
+                            (s) => s.droppable === true
                         );
                         if (currentDroppable !== droppableBelow) {
                             // currnetDroppable would be null if this is the first time you are dragging over a droppabale
@@ -146,7 +153,7 @@ export class Dragndrop implements Plugin {
                 root.addEventListener('pointermove', handlePointermove);
 
                 const stopDragging = function (
-                    originalPointerUpEvent: FederatedPointerEvent,
+                    originalPointerUpEvent: FederatedPointerEvent
                 ) {
                     if (dragstartTriggered) {
                         // prevent click event being triggerd
@@ -180,7 +187,9 @@ export class Dragndrop implements Plugin {
                     root.removeEventListener('pointermove', handlePointermove);
                 };
 
-                target.addEventListener('pointerup', stopDragging, { once: true });
+                target.addEventListener('pointerup', stopDragging, {
+                    once: true,
+                });
                 target.addEventListener('pointerupoutside', stopDragging, {
                     once: true,
                 });

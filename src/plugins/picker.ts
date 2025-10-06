@@ -40,7 +40,10 @@ export class Picker implements Plugin {
         }
 
         if (shape.hitArea || shape.renderable) {
-            shape.worldTransform.applyInverse({ x: wx, y: wy }, tempLocalPosition);
+            shape.worldTransform.applyInverse(
+                { x: wx, y: wy },
+                tempLocalPosition
+            );
             const { x, y } = tempLocalPosition;
 
             if (shape.hitArea) {

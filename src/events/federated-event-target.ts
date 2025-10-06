@@ -65,11 +65,10 @@ export interface FederatedOptions {
  * A simplified shape of an interactive object for the `eventTarget` property of a {@link FederatedEvent}
  * @memberof events
  */
-export interface FederatedEventTarget extends 
-    EventEmitter,
-    EventTarget,
-    Required<FederatedOptions> 
-{
+export interface FederatedEventTarget
+    extends EventEmitter,
+        EventTarget,
+        Required<FederatedOptions> {
     /** The parent of this event target. */
     readonly parent?: FederatedEventTarget;
 
@@ -94,5 +93,5 @@ export interface FederatedEventTarget extends
  * @memberof events
  */
 export type FederatedEventHandler<T = FederatedPointerEvent> = (
-    event: T,
+    event: T
 ) => void;

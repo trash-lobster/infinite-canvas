@@ -1,16 +1,16 @@
 import {
-  VertexStepMode,
-  type Device,
-  type InputLayout,
-  type Program,
-  type RenderPipeline,
-  Format,
-  RenderPass,
-  Buffer,
-  Bindings,
-  PrimitiveTopology,
-  BufferUsage,
-  BufferFrequencyHint,
+    VertexStepMode,
+    type Device,
+    type InputLayout,
+    type Program,
+    type RenderPipeline,
+    Format,
+    RenderPass,
+    Buffer,
+    Bindings,
+    PrimitiveTopology,
+    BufferUsage,
+    BufferFrequencyHint,
 } from '@antv/g-device-api';
 import { vert, frag } from '../shaders/grid2';
 import { DataArray } from '../utils';
@@ -41,17 +41,17 @@ export class Grid2 {
 
             this.__inputLayout = device.createInputLayout({
                 vertexBufferDescriptors: [
-                {
-                    arrayStride: 4 * 2,
-                    stepMode: VertexStepMode.VERTEX,
-                    attributes: [
                     {
-                        format: Format.F32_RG,
-                        offset: 0,
-                        shaderLocation: 0,
+                        arrayStride: 4 * 2,
+                        stepMode: VertexStepMode.VERTEX,
+                        attributes: [
+                            {
+                                format: Format.F32_RG,
+                                offset: 0,
+                                shaderLocation: 0,
+                            },
+                        ],
                     },
-                    ],
-                },
                 ],
                 indexBufferFormat: null,
                 program: this.__program,
@@ -67,9 +67,9 @@ export class Grid2 {
             this.__bindings = device.createBindings({
                 pipeline: this.__pipeline,
                 uniformBufferBindings: [
-                {
-                    buffer: uniformBuffer,
-                },
+                    {
+                        buffer: uniformBuffer,
+                    },
                 ],
             });
 
@@ -102,7 +102,7 @@ export class Grid2 {
                     buffer: this.__buffer,
                 },
             ],
-            null,
+            null
         );
         renderPass.draw(4);
     }

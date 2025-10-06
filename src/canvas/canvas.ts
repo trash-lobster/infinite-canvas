@@ -215,12 +215,14 @@ export class Canvas {
     }
 
     client2Viewport({ x, y }: IPointData): IPointData {
-        const { left, top } = this.#pluginContext.canvas.getBoundingClientRect();
+        const { left, top } =
+            this.#pluginContext.canvas.getBoundingClientRect();
         return { x: x - left, y: y - top };
     }
 
     viewport2Client({ x, y }: IPointData): IPointData {
-        const { left, top } = this.#pluginContext.canvas.getBoundingClientRect();
+        const { left, top } =
+            this.#pluginContext.canvas.getBoundingClientRect();
         return { x: x + left, y: y + top };
     }
 
@@ -229,7 +231,7 @@ export class Canvas {
         const clip = vec2.transformMat3(
             vec2.create(),
             [x, y],
-            viewProjectionMatrix,
+            viewProjectionMatrix
         );
         return {
             x: ((clip[0] + 1) / 2) * width,
@@ -242,7 +244,7 @@ export class Canvas {
         const canvas = vec2.transformMat3(
             vec2.create(),
             [(x / width) * 2 - 1, (1 - y / height) * 2 - 1],
-            viewProjectionMatrixInv,
+            viewProjectionMatrixInv
         );
         return { x: canvas[0], y: canvas[1] };
     }

@@ -132,8 +132,8 @@ export class FederatedMouseEvent
      */
     getModifierState(key: string): boolean {
         return (
-        'getModifierState' in this.nativeEvent &&
-        this.nativeEvent.getModifierState(key)
+            'getModifierState' in this.nativeEvent &&
+            this.nativeEvent.getModifierState(key)
         );
     }
 
@@ -172,7 +172,7 @@ export class FederatedMouseEvent
         _shiftKeyArg: boolean,
         _metaKeyArg: boolean,
         _buttonArg: number,
-        _relatedTargetArg: EventTarget,
+        _relatedTargetArg: EventTarget
     ): void {
         throw new Error('Method not implemented.');
     }

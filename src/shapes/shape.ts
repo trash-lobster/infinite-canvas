@@ -69,16 +69,19 @@ export abstract class Shape
     addEventListener(
         type: string,
         listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions,
+        options?: boolean | AddEventListenerOptions
     ) {
         const capture =
-        (isBoolean(options) && options) || (isObject(options) && options.capture);
+            (isBoolean(options) && options) ||
+            (isObject(options) && options.capture);
         const signal = isObject(options) ? options.signal : undefined;
         const once = isObject(options) && options.once;
         const context = isFunction(listener) ? undefined : listener;
 
         type = capture ? `${type}capture` : type;
-        const listenerFn = isFunction(listener) ? listener : listener.handleEvent;
+        const listenerFn = isFunction(listener)
+            ? listener
+            : listener.handleEvent;
 
         if (signal) {
             signal.addEventListener('abort', () => {
@@ -96,10 +99,11 @@ export abstract class Shape
     removeEventListener(
         type: string,
         listener?: EventListenerOrEventListenerObject,
-        options?: boolean | EventListenerOptions,
+        options?: boolean | EventListenerOptions
     ) {
         const capture =
-        (isBoolean(options) && options) || (isObject(options) && options.capture);
+            (isBoolean(options) && options) ||
+            (isObject(options) && options.capture);
         const context = isFunction(listener) ? undefined : listener;
 
         type = capture ? `${type}capture` : type;
@@ -111,7 +115,7 @@ export abstract class Shape
     dispatchEvent(e: Event) {
         if (!(e instanceof FederatedEvent)) {
             throw new Error(
-                'Container cannot propagate events outside of the Federated Events API',
+                'Container cannot propagate events outside of the Federated Events API'
             );
         }
 
@@ -126,7 +130,7 @@ export abstract class Shape
     abstract render(
         device: Device,
         renderPass: RenderPass,
-        uniformBuffer: Buffer,
+        uniformBuffer: Buffer
     ): void;
 
     abstract destroy(): void;
@@ -239,12 +243,12 @@ export abstract class Shape
 
         return child;
     }
-    }
+}
 
 export function isFillOrStrokeAffected(
     pointerEvents: PointerEvents,
     fill: string,
-    stroke: string,
+    stroke: string
 ): [boolean, boolean] {
     let hasFill = false;
     let hasStroke = false;
@@ -259,7 +263,10 @@ export function isFillOrStrokeAffected(
         hasStroke = isStrokeOtherThanNone;
     } else if (pointerEvents === 'visiblefill' || pointerEvents === 'fill') {
         hasFill = true;
-    } else if (pointerEvents === 'visiblestroke' || pointerEvents === 'stroke') {
+    } else if (
+        pointerEvents === 'visiblestroke' ||
+        pointerEvents === 'stroke'
+    ) {
         hasStroke = true;
     } else if (pointerEvents === 'visible' || pointerEvents === 'all') {
         // The values of the fill and stroke do not affect event processing.

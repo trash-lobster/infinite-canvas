@@ -13,7 +13,7 @@ export class AsyncParallelHook<T> {
         return Promise.all(
             this.__callbacks.map((callback) => {
                 return callback(...args);
-            }),
+            })
         );
     }
 }

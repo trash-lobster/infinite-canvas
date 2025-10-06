@@ -204,21 +204,21 @@ export class Circle extends Shape {
                 program: this.#program,
                 colorAttachmentFormats: [Format.U8_RGBA_RT],
                 megaStateDescriptor: {
-                attachmentsState: [
-                    {
-                        channelWriteMask: ChannelWriteMask.ALL,
-                        rgbBlendState: {
-                            blendMode: BlendMode.ADD,
-                            blendSrcFactor: BlendFactor.SRC_ALPHA,
-                            blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
+                    attachmentsState: [
+                        {
+                            channelWriteMask: ChannelWriteMask.ALL,
+                            rgbBlendState: {
+                                blendMode: BlendMode.ADD,
+                                blendSrcFactor: BlendFactor.SRC_ALPHA,
+                                blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
+                            },
+                            alphaBlendState: {
+                                blendMode: BlendMode.ADD,
+                                blendSrcFactor: BlendFactor.ONE,
+                                blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
+                            },
                         },
-                        alphaBlendState: {
-                            blendMode: BlendMode.ADD,
-                            blendSrcFactor: BlendFactor.ONE,
-                            blendDstFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
-                        },
-                    },
-                ],
+                    ],
                 },
             });
 
@@ -238,8 +238,10 @@ export class Circle extends Shape {
         this.#uniformBuffer.setSubData(
             0,
             new Uint8Array(
-                new Float32Array(paddingMat3(this.worldTransform.toArray(true))).buffer,
-            ),
+                new Float32Array(
+                    paddingMat3(this.worldTransform.toArray(true))
+                ).buffer
+            )
         );
 
         if (this.renderDirtyFlag) {
@@ -255,25 +257,25 @@ export class Circle extends Shape {
                         this.#fillRGB.g / 255,
                         this.#fillRGB.b / 255,
                         this.#fillRGB.opacity,
-                    ]).buffer,
-                ),
+                    ]).buffer
+                )
             );
         }
 
         renderPass.setPipeline(this.#pipeline);
         renderPass.setVertexInput(
-        this.#inputLayout,
+            this.#inputLayout,
             [
                 {
-                buffer: this.#fragUnitBuffer,
+                    buffer: this.#fragUnitBuffer,
                 },
                 {
-                buffer: this.#instancedBuffer,
+                    buffer: this.#instancedBuffer,
                 },
             ],
             {
                 buffer: this.#indexBuffer,
-            },
+            }
         );
         renderPass.setBindings(this.#bindings);
         renderPass.drawIndexed(6, 1);
@@ -299,7 +301,7 @@ export class Circle extends Shape {
         const [hasFill, hasStroke] = isFillOrStrokeAffected(
             this.pointerEvents,
             this.#fill,
-            this.#stroke,
+            this.#stroke
         );
         if (hasFill) {
             return absDistance <= this.#r;

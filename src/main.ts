@@ -1,5 +1,5 @@
-import { Circle, Group } from "./shapes";
-import { Canvas } from "./canvas";
+import { Circle, Group } from './shapes';
+import { Canvas } from './canvas';
 
 async function main() {
     const __canvas = document.getElementById('c') as HTMLCanvasElement;
@@ -73,9 +73,9 @@ async function main() {
         canvas.render();
         requestAnimationFrame(animate);
     };
-    
+
     animate();
-    
+
     window.addEventListener('resize', () => {
         resize(window.innerWidth, window.innerHeight);
         canvas.resize(window.innerWidth, window.innerHeight);

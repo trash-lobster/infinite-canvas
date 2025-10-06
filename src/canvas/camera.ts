@@ -5,10 +5,10 @@ import { EASING_FUNCTION } from '../utils';
 const EPSILON = 0.01;
 
 export interface Landmark {
-  zoom: number;
-  x: number;
-  y: number;
-  rotation: number;
+    zoom: number;
+    x: number;
+    y: number;
+    rotation: number;
 }
 
 export class Camera {
@@ -69,9 +69,12 @@ export class Camera {
         mat3.multiply(
             this.__viewProjectionMatrix,
             this.__projectionMatrix,
-            this.__viewMatrix,
+            this.__viewMatrix
         );
-        mat3.invert(this.__viewProjectionMatrixInv, this.__viewProjectionMatrix);
+        mat3.invert(
+            this.__viewProjectionMatrixInv,
+            this.__viewProjectionMatrix
+        );
     }
 
     get projectionMatrix() {
@@ -158,7 +161,7 @@ export class Camera {
             duration: number;
             onframe: (t: number) => void;
             onfinish: () => void;
-        }> = {},
+        }> = {}
     ) {
         const {
             easing = 'linear',
@@ -212,7 +215,7 @@ export class Camera {
                 interZoomRotation,
                 [this.zoom, this.__rotation],
                 destZoomRotation,
-                t,
+                t
             );
 
             this.__x = interPosition[0];

@@ -1,23 +1,23 @@
 {
-  "compilerOptions": {
-    "module": "esnext",
-    "target": "es6",
-    "jsx": "preserve",
-    "moduleResolution": "node",
-    "experimentalDecorators": true,
-    "declaration": true,
-    "sourceMap": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "pretty": true,
-    "lib": ["dom", "esnext"],
-    "skipLibCheck": true,
-    "sourceRoot": "src",
-    "baseUrl": "src",
-    "resolveJsonModule": true,
-    "downlevelIteration": true,
-    "outDir": "./dist"
-  },
-  "include": ["src/**/*"]
+    "compilerOptions": {
+        "module": "esnext",
+        "target": "es6",
+        "jsx": "preserve",
+        "moduleResolution": "node",
+        "experimentalDecorators": true,
+        "declaration": true,
+        "sourceMap": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "isolatedModules": true,
+        "pretty": true,
+        "lib": ["dom", "esnext"],
+        "skipLibCheck": true,
+        "sourceRoot": "src",
+        "baseUrl": "src",
+        "resolveJsonModule": true,
+        "downlevelIteration": true,
+        "outDir": "./dist"
+    },
+    "include": ["src/**/*"]
 }
