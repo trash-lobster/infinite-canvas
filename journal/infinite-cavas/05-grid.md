@@ -66,6 +66,7 @@ We use the shader to determine if the line should be displayed and whether it sh
 ## Texture-based grid
 
 ![alt text](1_P4a5_Z1u5WXOQWpVglPb2g.webp)
+
 Texture grid ends up looking much better to the eye, while line grid creates a moire effect that distracts.
 
 ## Dot grid
